@@ -2,21 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --brand: #10b981; /* emerald-500 */
-  }
-}
-
 @layer components {
   .card {
-    @apply bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700;
+    @apply bg-white rounded-2xl shadow border border-gray-200;
   }
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500;
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-full bg-esprit-red text-white font-semibold hover:bg-[#a00d26];
   }
   .input {
-    @apply px-3 py-2 rounded-xl border bg-gray-50 dark:bg-gray-900;
+    @apply px-3 py-2 rounded-xl border border-gray-300 focus:border-esprit-red focus:ring-esprit-red;
   }
 }
-

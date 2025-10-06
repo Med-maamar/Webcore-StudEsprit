@@ -1,14 +1,13 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="space-y-4">
-  <h1 class="text-2xl font-semibold">Users</h1>
-  <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
-    <form class="flex flex-wrap items-center gap-2" hx-get="/dashboard/users/partial" hx-target="#users-table" hx-trigger="change delay:300ms, keyup delay:300ms" hx-include="this">
-      <input type="text" name="q" value="{{ q }}" placeholder="Search email/username" class="px-3 py-2 rounded-xl border bg-gray-50 dark:bg-gray-900" />
-      <select name="role" class="px-3 py-2 rounded-xl border bg-gray-50 dark:bg-gray-900">
-        <option value="">All roles</option>
+  <h1 class="text-2xl font-semibold text-esprit-red">Gestion des utilisateurs</h1>
+  <div class="bg-white p-4 rounded-2xl shadow border border-gray-200">
+    <form class="flex flex-wrap items-center gap-3" hx-get="/dashboard/users/partial" hx-target="#users-table" hx-trigger="change delay:300ms, keyup delay:300ms" hx-include="this">
+      <input type="text" name="q" value="{{ q }}" placeholder="Rechercher email / username" class="px-3 py-2 rounded-xl border border-gray-300 focus:border-esprit-red focus:ring-esprit-red" />
+      <select name="role" class="px-3 py-2 rounded-xl border border-gray-300 focus:border-esprit-red focus:ring-esprit-red">
+        <option value="">Tous les rôles</option>
         <option value="Student" {% if role == 'Student' %}selected{% endif %}>Student</option>
-        <option value="Moderator" {% if role == 'Moderator' %}selected{% endif %}>Moderator</option>
         <option value="Admin" {% if role == 'Admin' %}selected{% endif %}>Admin</option>
       </select>
       <input type="hidden" name="page" value="{{ page }}" />
@@ -21,4 +20,3 @@
   </div>
 </div>
 {% endblock %}
-

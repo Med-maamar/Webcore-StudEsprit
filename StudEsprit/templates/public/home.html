@@ -1,135 +1,77 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>StudEsprit — Learn, Moderate, Lead</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              brand: {
-                DEFAULT: '#10b981',
-                100: '#d1fae5',
-                500: '#10b981',
-                700: '#047857',
-              },
-            },
-            boxShadow: {
-              soft: '0 25px 50px -12px rgba(16, 185, 129, 0.25)',
-            },
-          },
-        },
-      };
-    </script>
-  </head>
-  <body class="min-h-full bg-slate-950 text-slate-100">
-    <div class="relative overflow-hidden">
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(94,234,212,0.25),transparent_55%)]"></div>
-      <div class="relative z-10 max-w-6xl mx-auto px-6">
-        <header class="flex items-center justify-between py-6">
-          <div class="flex items-center gap-3">
-            <div class="h-10 w-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300">
-              <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M4.5 10.5V21h15V10.5" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-xl font-semibold">StudEsprit</p>
-              <p class="text-xs uppercase tracking-widest text-emerald-200/80">Accounts & AI dashboards</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <a href="/auth/login" class="px-5 py-2 rounded-xl bg-emerald-500 text-slate-900 font-semibold shadow-soft hover:bg-emerald-400">Login</a>
-            <a href="/auth/register" class="px-5 py-2 rounded-xl border border-emerald-400/60 text-emerald-200 hover:bg-emerald-500/10">Register</a>
-          </div>
-        </header>
+{% extends 'base.html' %}
+{% block content %}
+<section class="relative overflow-hidden rounded-3xl border border-white/60 shadow-lg">
+  <img src="https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=1600&q=80" alt="Hero" class="w-full h-96 md:h-[420px] object-cover">
+  <div class="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent"></div>
+  <div class="absolute inset-0 flex flex-col justify-center px-8 md:px-16 text-white gap-4">
+    <div class="inline-flex items-center bg-white/90 text-esprit-red px-4 py-1 rounded-full text-sm font-semibold w-max">2025 / 2026</div>
+    <h1 class="text-3xl md:text-5xl font-bold uppercase max-w-3xl">Choisissez votre avenir académique !</h1>
+    <p class="max-w-2xl text-base md:text-lg text-white/85">Découvrez la plateforme StudEsprit : admissions simplifiées, suivi étudiant, services campus et un tableau de bord alimenté par l'IA pour chaque rôle.</p>
+    <div class="flex flex-wrap gap-3 mt-3">
+      <a href="/auth/register" class="px-5 py-3 rounded-full bg-esprit-red text-white font-semibold hover:bg-[#a00d26]">Candidater</a>
+      <a href="/auth/login" class="px-5 py-3 rounded-full border border-white text-white font-semibold hover:bg-white hover:text-esprit-red">Espace étudiant</a>
+    </div>
+  </div>
+</section>
 
-        <main class="py-10 md:py-16">
-          <section class="grid gap-10 md:grid-cols-[1.2fr,0.8fr] items-center">
-            <div class="space-y-6">
-              <span class="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-3 py-1 text-sm text-emerald-200">
-                <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                MongoDB powered user experience
-              </span>
-              <h1 class="text-4xl md:text-5xl font-semibold leading-tight">A unified campus platform for <span class="text-emerald-400">students</span>, <span class="text-emerald-400">moderators</span>, and <span class="text-emerald-400">admins</span>.</h1>
-              <p class="text-lg text-slate-300 max-w-2xl">StudEsprit centralises authentication, role-based dashboards, and AI-driven personalization so every user lands on insight-rich panels the moment they log in.</p>
-              <div class="flex flex-wrap gap-3">
-                <a href="/auth/login" class="px-6 py-3 rounded-xl bg-emerald-500 text-slate-900 font-semibold shadow-soft hover:bg-emerald-400">Access your dashboard</a>
-                <a href="#roles" class="px-6 py-3 rounded-xl border border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/10">Discover the role journeys</a>
-              </div>
-            </div>
-            <div class="relative">
-              <div class="absolute -top-6 -right-6 h-24 w-24 rounded-full bg-emerald-500/20 blur-3xl"></div>
-              <div class="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-6 shadow-2xl">
-                <p class="text-sm uppercase tracking-wider text-emerald-200/70 mb-4">Why teams choose StudEsprit</p>
-                <ul class="space-y-4">
-                  {% for item in highlights %}
-                    <li class="flex gap-3">
-                      <div class="h-10 w-10 flex items-center justify-center rounded-2xl bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 shrink-0">
-                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p class="font-semibold">{{ item.title }}</p>
-                        <p class="text-sm text-slate-300">{{ item.body }}</p>
-                      </div>
-                    </li>
-                  {% endfor %}
-                </ul>
-              </div>
-            </div>
-          </section>
+<section class="mt-10 grid gap-6 md:grid-cols-3">
+  <article class="bg-white rounded-2xl shadow p-6 border border-gray-200">
+    <h2 class="text-esprit-red font-semibold text-lg mb-2">Admissions</h2>
+    <p class="text-sm text-esprit-gray">Créez votre compte et soumettez vos pièces en ligne pour rejoindre la prochaine promotion StudEsprit.</p>
+    <a href="/auth/register" class="mt-3 inline-flex items-center text-esprit-red font-semibold">Commencer →</a>
+  </article>
+  <article class="bg-white rounded-2xl shadow p-6 border border-gray-200">
+    <h2 class="text-esprit-red font-semibold text-lg mb-2">Programmes</h2>
+    <p class="text-sm text-esprit-gray">Découvrez nos parcours ingénierie, data et innovation adaptés aux besoins du marché international.</p>
+    <a href="/courses/" class="mt-3 inline-flex items-center text-esprit-red font-semibold">Explorer →</a>
+  </article>
+  <article class="bg-white rounded-2xl shadow p-6 border border-gray-200">
+    <h2 class="text-esprit-red font-semibold text-lg mb-2">Vie étudiante</h2>
+    <p class="text-sm text-esprit-gray">Suivez les actualités campus, accédez aux services et profitez des événements Esprit.</p>
+    <a href="/events/" class="mt-3 inline-flex items-center text-esprit-red font-semibold">Agenda →</a>
+  </article>
+</section>
 
-          <section id="roles" class="mt-16 md:mt-24">
-            <div class="flex items-center justify-between flex-wrap gap-4">
-              <h2 class="text-2xl font-semibold">Three journeys, one platform</h2>
-              <p class="text-sm text-slate-300 max-w-xl">Role-aware navigation ensures students, moderators, and admins see the insights they need—no clutter, just clarity.</p>
-            </div>
-            <div class="grid gap-6 md:grid-cols-3 mt-8">
-              {% for role in roles %}
-                <article class="relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-6 before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/10 before:to-transparent">
-                  <div class="relative z-10 space-y-4">
-                    <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold {{ role.accent }} uppercase tracking-wider">{{ role.badge }}</span>
-                    <div>
-                      <h3 class="text-xl font-semibold">{{ role.title }}</h3>
-                      <p class="text-sm text-emerald-200/80">{{ role.subtitle }}</p>
-                    </div>
-                    <p class="text-sm text-slate-200">{{ role.body }}</p>
-                  </div>
-                </article>
-              {% endfor %}
-            </div>
-          </section>
-
-          <section class="mt-20 md:mt-28">
-            <div class="rounded-3xl border border-emerald-400/20 bg-emerald-500/10 p-8 md:p-12 text-center">
-              <h2 class="text-3xl font-semibold mb-4">Ready to explore the StudEsprit dashboards?</h2>
-              <p class="text-slate-200 max-w-3xl mx-auto mb-6">
-                Log in to access your personalized dashboard. Students get curated study flows, moderators receive streamlined reviews, and admins unlock the full analytics command center.
-              </p>
-              <div class="flex flex-wrap justify-center gap-4">
-                <a href="/auth/login" class="px-6 py-3 rounded-xl bg-emerald-500 text-slate-900 font-semibold shadow-soft hover:bg-emerald-400">Login now</a>
-                <a href="/auth/register" class="px-6 py-3 rounded-xl border border-emerald-400/40 text-emerald-200 hover:bg-emerald-500/10">Create an account</a>
-              </div>
-            </div>
-          </section>
-        </main>
-
-        <footer class="py-10 text-sm text-slate-500 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <p>&copy; {% now "Y" %} StudEsprit. Built with Django, MongoDB, and Tailwind.</p>
-          <div class="flex gap-4 text-slate-400">
-            <a href="/courses/" class="hover:text-emerald-300">Courses</a>
-            <a href="/services/" class="hover:text-emerald-300">Services</a>
-            <a href="/events/" class="hover:text-emerald-300">Events</a>
-            <a href="/shop/" class="hover:text-emerald-300">Shop</a>
-          </div>
-        </footer>
+<section class="mt-12 grid gap-6 md:grid-cols-[2fr,1fr]">
+  <div class="bg-white rounded-2xl shadow border border-gray-200 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-xl font-semibold">Actualités</h3>
+      <a href="/events/" class="text-esprit-red text-sm font-semibold">Toutes les actualités</a>
+    </div>
+    <div class="space-y-4">
+      <div class="flex gap-4">
+        <div class="w-24 h-16 rounded-xl bg-esprit-red/10 flex items-center justify-center text-esprit-red font-semibold">Actu</div>
+        <div>
+          <p class="font-semibold">Hackathon H12 Innovation</p>
+          <p class="text-sm text-esprit-gray">L'intelligence artificielle au service de la culture : retour sur un événement phare.</p>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="w-24 h-16 rounded-xl bg-esprit-red/10 flex items-center justify-center text-esprit-red font-semibold">Sport</div>
+        <div>
+          <p class="font-semibold">Move Your Body 1.0</p>
+          <p class="text-sm text-esprit-gray">Quand le sport et la créativité s'unissent pour dynamiser le campus.</p>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="w-24 h-16 rounded-xl bg-esprit-red/10 flex items-center justify-center text-esprit-red font-semibold">Admissions</div>
+        <div>
+          <p class="font-semibold">Portes ouvertes 2025</p>
+          <p class="text-sm text-esprit-gray">Rencontrez nos équipes pédagogiques et découvrez StudEsprit.</p>
+        </div>
       </div>
     </div>
-  </body>
-</html>
+  </div>
+  <div class="bg-white rounded-2xl shadow border border-gray-200 p-6">
+    <h3 class="text-xl font-semibold mb-4">Services rapides</h3>
+    <ul class="space-y-3 text-sm">
+      <li><a href="/auth/login" class="flex justify-between items-center hover:text-esprit-red">Portail étudiant <span>→</span></a></li>
+      <li><a href="/services/" class="flex justify-between items-center hover:text-esprit-red">Scolarité <span>→</span></a></li>
+      <li><a href="/events/" class="flex justify-between items-center hover:text-esprit-red">Calendrier académique <span>→</span></a></li>
+      <li><a href="/shop/" class="flex justify-between items-center hover:text-esprit-red">Boutique officielle <span>→</span></a></li>
+    </ul>
+  </div>
+</section>
+
+{% endblock %}
+

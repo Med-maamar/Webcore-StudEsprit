@@ -3,17 +3,17 @@
   <td class="px-4 py-3">{{ row.username }}</td>
   <td class="px-4 py-3">
     {% if current_user.role == 'Admin' %}
-      <form hx-post="/dashboard/users/update-role" hx-target="closest tr" hx-swap="outerHTML" class="inline">
+      <form hx-post="/dashboard/users/update-role" hx-target="closest tr" hx-swap="outerHTML" class="inline-flex items-center gap-2">
         {% csrf_token %}
         <input type="hidden" name="user_id" value="{{ row.id }}" />
-        <select name="role" class="px-2 py-1 rounded-xl border bg-gray-50 dark:bg-gray-900">
+        <select name="role" class="px-3 py-1 rounded-full border border-gray-300 focus:border-esprit-red focus:ring-esprit-red text-sm">
           <option value="Student" {% if row.role == 'Student' %}selected{% endif %}>Student</option>
           <option value="Admin" {% if row.role == 'Admin' %}selected{% endif %}>Admin</option>
         </select>
-        <button class="ml-2 px-2 py-1 rounded-xl bg-emerald-600 text-white">Update</button>
+        <button class="px-3 py-1 rounded-full bg-esprit-red text-white text-sm">Mettre à jour</button>
       </form>
     {% else %}
-      <span class="px-2 py-1 rounded-xl bg-gray-100 dark:bg-gray-900">{{ row.role }}</span>
+      <span class="px-3 py-1 rounded-full bg-esprit-red/10 text-esprit-red text-sm">{{ row.role }}</span>
     {% endif %}
   </td>
   <td class="px-4 py-3">{{ row.created_at }}</td>
