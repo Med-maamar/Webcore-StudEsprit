@@ -25,6 +25,8 @@ import urllib.parse
 import requests
 from google.oauth2 import id_token
 from google.auth.transport import requests as grequests
+from slugify import slugify
+from pathlib import Path
 
 ph = PasswordHasher()
 
@@ -130,7 +132,6 @@ def profile_post(request: HttpRequest):
 @csrf_protect
 @login_required_mongo
 def change_password_post(request: HttpRequest):
-    current = request.POST.get("current_password", "")
     new = request.POST.get("new_password", "")
     confirm = request.POST.get("confirm_password", "")
     try:
@@ -138,7 +139,6 @@ def change_password_post(request: HttpRequest):
         if not user:
             messages.error(request, "User not found")
             return redirect("/account/profile")
-        ph.verify(user.get("password_hash", ""), current)
         if new != confirm:
             raise ValueError("New passwords do not match")
         validate_password(new)
@@ -224,3 +224,37 @@ def google_callback(request: HttpRequest):
     record_login_audit(str(user["_id"]), request.META.get("REMOTE_ADDR", ""), request.META.get("HTTP_USER_AGENT", ""))
     messages.success(request, "Logged in with Google")
     return redirect("/dashboard/")
+
+
+@csrf_protect
+@login_required_mongo
+def profile_upload_avatar_post(request: HttpRequest):
+    f = request.FILES.get("avatar_file")
+    if not f:
+        messages.error(request, "No file uploaded")
+        return redirect("/account/profile")
+    # Basic validation
+    allowed = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}
+    ext = allowed.get(getattr(f, "content_type", ""))
+    if not ext:
+        messages.error(request, "Unsupported image type")
+        return redirect("/account/profile")
+    if f.size and f.size > 5 * 1024 * 1024:
+        messages.error(request, "Image too large (max 5MB)")
+        return redirect("/account/profile")
+    # Save to MEDIA/avatars/<user_id>/filename
+    filename = slugify(Path(f.name).stem) + ext
+    user_dir = Path(settings.MEDIA_ROOT) / "avatars" / request.user.id
+    user_dir.mkdir(parents=True, exist_ok=True)
+    dst = user_dir / filename
+    with dst.open("wb") as out:
+        for chunk in f.chunks():
+            out.write(chunk)
+    # Update user avatar_url
+    url = f"{settings.MEDIA_URL}avatars/{request.user.id}/{filename}"
+    try:
+        update_user_profile(request.user.id, None, url)
+        messages.success(request, "Avatar updated")
+    except Exception as e:
+        messages.error(request, str(e))
+    return redirect("/account/profile")

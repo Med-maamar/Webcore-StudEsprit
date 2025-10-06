@@ -14,21 +14,41 @@
           <label class="block text-sm mb-1">Username</label>
           <input name="username" value="{{ user.username }}" class="w-full px-3 py-2 rounded-xl border bg-gray-50 dark:bg-gray-900" />
         </div>
-        <div class="md:col-span-2">
-          <label class="block text-sm mb-1">Avatar URL</label>
-          <input name="avatar_url" value="{{ user.avatar_url }}" class="w-full px-3 py-2 rounded-xl border bg-gray-50 dark:bg-gray-900" />
+        <div class="md:col-span-2 space-y-2">
+          <label class="block text-sm mb-1">Avatar</label>
+          <div class="flex items-center gap-4">
+            <img src="{{ user.avatar_url|default:'#' }}" alt="avatar" class="w-14 h-14 rounded-xl object-cover bg-gray-700" onerror="this.style.display='none'"/>
+            <input name="avatar_url" placeholder="Or paste an image URL" value="{{ user.avatar_url }}" class="flex-1 px-3 py-2 rounded-xl border bg-gray-50 dark:bg-gray-900" />
+          </div>
         </div>
       </div>
       <div class="mt-4">
         <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white">Save</button>
       </div>
     </form>
+    <form method="post" action="/account/profile/upload-avatar" enctype="multipart/form-data" class="mt-4">
+      {% csrf_token %}
+      <div class="flex items-center gap-3">
+        <input type="file" name="avatar_file" accept="image/png,image/jpeg,image/webp" class="block w-full text-sm" />
+        <button class="px-3 py-2 rounded-xl bg-emerald-600 text-white">Upload</button>
+      </div>
+    </form>
   </div>
 
   <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
     <h2 class="text-xl font-semibold mb-4">Change Password</h2>
-    {% include 'account/change_password.html' %}
+    <form method="post" action="/account/change-password" class="space-y-3">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm mb-1">New Password</label>
+        <input name="new_password" type="password" required class="w-full px-3 py-2 rounded-xl border bg-gray-50 dark:bg-gray-900" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Confirm New Password</label>
+        <input name="confirm_password" type="password" required class="w-full px-3 py-2 rounded-xl border bg-gray-50 dark:bg-gray-900" />
+      </div>
+      <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white" type="submit">Update Password</button>
+    </form>
   </div>
 </div>
 {% endblock %}
-

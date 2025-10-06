@@ -12,7 +12,8 @@ __pycache__/
 staticfiles/
 
 # Environments
-
+.env
+.env.*
 venv/
 .venv/
 studEsprit/.venv/
