@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+  <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
+    <h2 class="text-xl font-semibold mb-4">Profile</h2>
+    <form method="post" action="/account/profile/update">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm mb-1">Email</label>
+          <input value="{{ user.email }}" disabled class="w-full px-3 py-2 rounded-xl border bg-gray-50 dark:bg-gray-900" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Username</label>
+          <input name="username" value="{{ user.username }}" class="w-full px-3 py-2 rounded-xl border bg-gray-50 dark:bg-gray-900" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">Avatar URL</label>
+          <input name="avatar_url" value="{{ user.avatar_url }}" class="w-full px-3 py-2 rounded-xl border bg-gray-50 dark:bg-gray-900" />
+        </div>
+      </div>
+      <div class="mt-4">
+        <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white">Save</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
+    <h2 class="text-xl font-semibold mb-4">Change Password</h2>
+    {% include 'account/change_password.html' %}
+  </div>
+</div>
+{% endblock %}
+

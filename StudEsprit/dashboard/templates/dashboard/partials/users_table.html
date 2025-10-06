@@ -1,0 +1,33 @@
+<div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
+  <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+    <thead class="bg-gray-50 dark:bg-gray-900">
+      <tr>
+        <th class="px-4 py-2 text-left text-xs font-medium">Email</th>
+        <th class="px-4 py-2 text-left text-xs font-medium">Username</th>
+        <th class="px-4 py-2 text-left text-xs font-medium">Role</th>
+        <th class="px-4 py-2 text-left text-xs font-medium">Created</th>
+        <th class="px-4 py-2"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+      {% for row in rows %}
+        {% include 'dashboard/partials/user_row.html' %}
+      {% empty %}
+        <tr><td class="px-4 py-3" colspan="5">No users found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="flex items-center justify-between mt-3 text-sm">
+  <div>Page {{ page }} of {{ pages }} ({{ total }} total)</div>
+  <div class="space-x-2">
+    {% if page > 1 %}
+      <button class="px-3 py-1 rounded-xl bg-gray-100 dark:bg-gray-800" hx-get="/dashboard/users/partial?q={{ q }}&role={{ role }}&page={{ page|add:-1 }}&page_size={{ page_size }}" hx-target="#users-table">Prev</button>
+    {% endif %}
+    {% if page < pages %}
+      <button class="px-3 py-1 rounded-xl bg-gray-100 dark:bg-gray-800" hx-get="/dashboard/users/partial?q={{ q }}&role={{ role }}&page={{ page|add:1 }}&page_size={{ page_size }}" hx-target="#users-table">Next</button>
+    {% endif %}
+  </div>
+</div>
+

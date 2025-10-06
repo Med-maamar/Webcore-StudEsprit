@@ -1,0 +1,22 @@
+<tr>
+  <td class="px-4 py-3">{{ row.email }}</td>
+  <td class="px-4 py-3">{{ row.username }}</td>
+  <td class="px-4 py-3">
+    {% if current_user.role == 'Admin' %}
+      <form hx-post="/dashboard/users/update-role" hx-target="closest tr" hx-swap="outerHTML" class="inline">
+        {% csrf_token %}
+        <input type="hidden" name="user_id" value="{{ row.id }}" />
+        <select name="role" class="px-2 py-1 rounded-xl border bg-gray-50 dark:bg-gray-900">
+          <option value="Student" {% if row.role == 'Student' %}selected{% endif %}>Student</option>
+          <option value="Admin" {% if row.role == 'Admin' %}selected{% endif %}>Admin</option>
+        </select>
+        <button class="ml-2 px-2 py-1 rounded-xl bg-emerald-600 text-white">Update</button>
+      </form>
+    {% else %}
+      <span class="px-2 py-1 rounded-xl bg-gray-100 dark:bg-gray-900">{{ row.role }}</span>
+    {% endif %}
+  </td>
+  <td class="px-4 py-3">{{ row.created_at }}</td>
+  <td class="px-4 py-3"></td>
+  <input type="hidden" value="{{ row.id }}" />
+</tr>

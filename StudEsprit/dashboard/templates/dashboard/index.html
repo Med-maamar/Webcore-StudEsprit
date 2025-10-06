@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block content %}
+  {% if student_empty %}
+    <div class="max-w-3xl mx-auto">
+      <div class="p-10 rounded-3xl border border-white/10 bg-white/5 text-center">
+        <h1 class="text-2xl font-semibold mb-2">Welcome</h1>
+        <p class="text-gray-300">Your student dashboard is coming soon.</p>
+      </div>
+    </div>
+  {% else %}
+    <div class="space-y-6">
+      <!-- KPI Cards (Admins only) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
+          <div class="text-sm text-gray-500">Total Users</div>
+          <div class="text-2xl font-semibold">{{ total_users }}</div>
+        </div>
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
+          <div class="text-sm text-gray-500">New Users (7d)</div>
+          <div class="text-2xl font-semibold">{{ new_last_7 }}</div>
+        </div>
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
+          <div class="text-sm text-gray-500">Logins (24h)</div>
+          <div class="text-2xl font-semibold">{{ logins_24h }}</div>
+        </div>
+        <div class="p-4 bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
+          <div class="text-sm text-gray-500">Role Distribution</div>
+          <div class="flex gap-2 items-end mt-2 h-16">
+            {% for r,c in role_counts.items %}
+              <div class="flex-1 text-center">
+                <div class="bg-emerald-500/70 dark:bg-emerald-600 rounded-t" style="height: {{ c|default:0|add:1 }}0%"></div>
+                <div class="text-xs mt-1">{{ r }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <!-- Users quick link -->
+        <div class="lg:col-span-2 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">Users</h2>
+            <a class="text-emerald-600" href="/dashboard/users">Manage</a>
+          </div>
+          <p class="text-sm text-gray-600 dark:text-gray-300">Search, filter, and update roles inline.</p>
+        </div>
+
+        <!-- Personalization demo -->
+        <div class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
+          <h2 class="text-lg font-semibold mb-2">Personalization Demo</h2>
+          <p class="text-sm mb-3 text-gray-600 dark:text-gray-300">Recommended panels based on your profile embedding.</p>
+          <div class="flex flex-wrap gap-2">
+            {% if recs %}
+              {% for r in recs %}
+                <span class="px-3 py-1 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Panel for {{ r.user_id|default:'User' }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="text-sm text-gray-500">No recommendations yet.</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- System card -->
+      <div class="p-6 bg-white dark:bg-gray-800 rounded-2xl shadow border border-gray-200 dark:border-gray-700">
+        <h2 class="text-lg font-semibold mb-2">System</h2>
+        <ul class="text-sm text-gray-700 dark:text-gray-300 list-disc ml-5">
+          <li>Mongo reachable: <span class="font-semibold">{{ system.mongo_ok }}</span></li>
+          <li>Tailwind build path: <code>/static/build/tailwind.css</code></li>
+        </ul>
+      </div>
+    </div>
+  {% endif %}
+{% endblock %}

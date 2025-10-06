@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.ruff_cache/
+
+# Django
+*.log
+staticfiles/
+
+# Environments
+
+venv/
+.venv/
+studEsprit/.venv/
+
+# Node
+node_modules/
+studEsprit/node_modules/
+studEsprit/static/build/
+
+# Editors/OS
+.DS_Store
+.idea/
+.vscode/
+
