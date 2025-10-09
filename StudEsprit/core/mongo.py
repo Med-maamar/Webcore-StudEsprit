@@ -15,7 +15,7 @@ _client: Optional[MongoClient] = None
 def get_client() -> MongoClient:
     global _client
     if _client is None:
-        uri = getattr(settings, "MONGO_URI", os.getenv("MONGO_URI", "mongodb://localhost:27017"))
+        uri = getattr(settings, "MONGO_URI", os.getenv("MONGO_URI"))
         _client = MongoClient(uri, serverSelectionTimeoutMS=2000)
     return _client
 

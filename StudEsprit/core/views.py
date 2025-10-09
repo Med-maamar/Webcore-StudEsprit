@@ -10,7 +10,8 @@ def coming_soon(request):
 
 def home(request):
     user = getattr(request, "user", None)
-    if user and user.is_authenticated:
+    # Only admins go to the dashboard; students stay on the public site
+    if user and user.is_authenticated and getattr(user, "role", "Student") == "Admin":
         return redirect("/dashboard/")
 
     roles = [

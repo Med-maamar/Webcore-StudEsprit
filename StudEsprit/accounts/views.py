@@ -222,8 +222,10 @@ def google_callback(request: HttpRequest):
     user = get_or_create_user_from_google(email=email, full_name=name, avatar_url=picture, google_sub=sub)
     _set_session_user(request, str(user["_id"]))
     record_login_audit(str(user["_id"]), request.META.get("REMOTE_ADDR", ""), request.META.get("HTTP_USER_AGENT", ""))
-    messages.success(request, "Logged in with Google")
-    return redirect("/dashboard/")
+    # No toast message for Google login; go to dashboard (admin) or home (student)
+    if user.get("role") == "Admin":
+        return redirect("/dashboard/")
+    return redirect("/")
 
 
 @csrf_protect

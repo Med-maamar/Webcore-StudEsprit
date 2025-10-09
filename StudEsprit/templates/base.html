@@ -61,7 +61,7 @@
           <a href="/courses/" class="hover:text-esprit-red">Programmes</a>
           <a href="/services/" class="hover:text-esprit-red">Services</a>
           <a href="/events/" class="hover:text-esprit-red">Actualités</a>
-          <a href="/shop/" class="hover:text-esprit-red">Boutique</a>
+          <a href="/shop/" class="hover:text-esprit-red">Bibliothèque</a>
         </nav>
         <div class="flex items-center gap-2">
           {% if current_user and current_user.is_authenticated %}
@@ -82,7 +82,7 @@
       </div>
     </header>
 
-    {% if current_user and current_user.is_authenticated %}
+    {% if current_user and current_user.is_authenticated and current_user.role == 'Admin' %}
     <div x-show="sidebarOpen" class="md:hidden fixed inset-0 z-40 bg-black/40" @click="sidebarOpen=false"></div>
     <aside x-show="sidebarOpen" class="md:hidden fixed top-0 left-0 bottom-0 w-72 bg-white shadow-lg z-50 p-6" @click.stop>
       {% include 'partials/sidebar.html' %}
@@ -91,7 +91,7 @@
 
     <div class="flex-1 w-full">
       <div class="max-w-7xl mx-auto px-4 py-8 flex gap-6">
-        {% if current_user and current_user.is_authenticated %}
+        {% if current_user and current_user.is_authenticated and current_user.role == 'Admin' %}
           <aside class="hidden md:block w-64 shrink-0">
             <div class="bg-white rounded-2xl shadow border border-gray-200 overflow-hidden">
               {% include 'partials/sidebar.html' %}
@@ -123,4 +123,3 @@
   </div>
 </body>
 </html>
-

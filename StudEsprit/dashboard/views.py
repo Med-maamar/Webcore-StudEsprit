@@ -6,7 +6,7 @@ from typing import Dict, Any
 
 from bson import ObjectId
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
 
@@ -18,9 +18,9 @@ from ai.embeddings import vector_search
 
 @login_required_mongo
 def index(request: HttpRequest):
-    # Student dashboard: show an empty/placeholder page
+    # Students do not have a dashboard: redirect them to the public home
     if getattr(request.user, "role", "Student") != "Admin":
-        return render(request, "dashboard/index.html", {"student_empty": True})
+        return redirect("/")
 
     # Admin dashboard KPIs
     db = get_db()
