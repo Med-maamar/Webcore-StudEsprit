@@ -7,3 +7,6 @@ ruff>=0.5.7
 black>=24.8.0
 requests>=2.31.0
 google-auth>=2.34.0
+Flask==3.0.0
+gunicorn==21.2.0
+pandas==2.2.2
