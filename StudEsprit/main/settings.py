@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
 DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"}
 CSRF_TRUSTED_ORIGINS = [
-    'https://studesprit.onrender.com',
+    'https://webcore-studesprit.onrender.com',
 ]
 ALLOWED_HOSTS = ['webcore-studesprit.onrender.com', 'localhost', '127.0.0.1']
 
