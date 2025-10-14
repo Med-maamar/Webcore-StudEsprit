@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
 DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"}
 
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+ALLOWED_HOSTS = ['studesprit.onrender.com', 'localhost', '127.0.0.1']
 
 APP_VERSION = "0.1.0"
 
