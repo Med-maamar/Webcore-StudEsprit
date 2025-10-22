@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+  <div class="max-w-4xl mx-auto py-8">
+    <!-- Header -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 mb-8">
+      <div class="flex items-center gap-3 mb-2">
+        <a href="{% url 'library:community' %}" class="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all duration-200">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+        </a>
+        <div class="p-3 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">Créer un Post</h1>
+          <p class="text-gray-600 mt-1">Partagez votre expérience avec la communauté</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Post Form -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+      <form method="POST" class="space-y-6">
+        {% csrf_token %}
+        
+        <!-- Title -->
+        <div>
+          <label for="title" class="block text-sm font-semibold text-gray-900 mb-2">
+            Titre du Post *
+          </label>
+          <input type="text" id="title" name="title" required
+                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                 placeholder="Donnez un titre accrocheur à votre post...">
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label for="category" class="block text-sm font-semibold text-gray-900 mb-2">
+            Catégorie *
+          </label>
+          <select id="category" name="category" required
+                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            <option value="">Sélectionnez une catégorie</option>
+            <option value="question">❓ Question</option>
+            <option value="help">🆘 Demande d'aide</option>
+            <option value="experience">💡 Expérience</option>
+            <option value="tip">💡 Conseil</option>
+            <option value="discussion">💬 Discussion</option>
+            <option value="general">📝 Général</option>
+          </select>
+        </div>
+
+        <!-- Content -->
+        <div>
+          <label for="content" class="block text-sm font-semibold text-gray-900 mb-2">
+            Contenu *
+          </label>
+          <textarea id="content" name="content" rows="12" required
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                    placeholder="Partagez votre expérience, posez votre question, ou donnez des conseils à vos camarades..."></textarea>
+          <p class="text-sm text-gray-500 mt-2">
+            💡 <strong>Conseils pour un bon post :</strong>
+            <br>• Soyez clair et précis dans votre message
+            <br>• Utilisez des exemples concrets si possible
+            <br>• Respectez les autres membres de la communauté
+            <br>• Utilisez des tags pour faciliter la recherche
+          </p>
+        </div>
+
+        <!-- Tags -->
+        <div>
+          <label for="tags" class="block text-sm font-semibold text-gray-900 mb-2">
+            Tags (optionnel)
+          </label>
+          <input type="text" id="tags" name="tags"
+                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                 placeholder="Ex: django, python, projet, aide, étude (séparés par des virgules)">
+          <p class="text-sm text-gray-500 mt-2">
+            Séparez les tags par des virgules. Cela aidera les autres à trouver votre post.
+          </p>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="flex items-center gap-4 pt-6 border-t border-gray-200">
+          <button type="submit" 
+                  class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+            </svg>
+            Publier le Post
+          </button>
+          <a href="{% url 'library:community' %}" 
+             class="bg-gray-100 text-gray-700 px-6 py-4 rounded-xl font-semibold hover:bg-gray-200 transition-all duration-200">
+            Annuler
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Guidelines -->
+    <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl border border-blue-200 p-6 mt-8">
+      <h3 class="text-lg font-semibold text-blue-900 mb-3">📋 Règles de la Communauté</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+        <div>
+          <h4 class="font-semibold mb-2">✅ À faire :</h4>
+          <ul class="space-y-1">
+            <li>• Respectez les autres membres</li>
+            <li>• Partagez des expériences constructives</li>
+            <li>• Aidez vos camarades étudiants</li>
+            <li>• Utilisez un langage approprié</li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold mb-2">❌ À éviter :</h4>
+          <ul class="space-y-1">
+            <li>• Spam ou contenu inapproprié</li>
+            <li>• Langage offensant ou discriminatoire</li>
+            <li>• Partage d'informations personnelles</li>
+            <li>• Contenu non lié aux études</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Auto-resize textarea
+const textarea = document.getElementById('content');
+textarea.addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = this.scrollHeight + 'px';
+});
+
+// Character counter for content
+const contentTextarea = document.getElementById('content');
+const maxLength = 2000;
+
+contentTextarea.addEventListener('input', function() {
+  const currentLength = this.value.length;
+  const remaining = maxLength - currentLength;
+  
+  // Create or update counter
+  let counter = document.getElementById('char-counter');
+  if (!counter) {
+    counter = document.createElement('div');
+    counter.id = 'char-counter';
+    counter.className = 'text-sm text-gray-500 mt-2';
+    this.parentNode.appendChild(counter);
+  }
+  
+  if (remaining < 100) {
+    counter.className = 'text-sm text-red-500 mt-2';
+  } else if (remaining < 200) {
+    counter.className = 'text-sm text-yellow-500 mt-2';
+  } else {
+    counter.className = 'text-sm text-gray-500 mt-2';
+  }
+  
+  counter.textContent = `${currentLength}/${maxLength} caractères`;
+  
+  if (currentLength > maxLength) {
+    this.value = this.value.substring(0, maxLength);
+    counter.textContent = `${maxLength}/${maxLength} caractères (limite atteinte)`;
+  }
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+  const title = document.getElementById('title').value.trim();
+  const content = document.getElementById('content').value.trim();
+  const category = document.getElementById('category').value;
+  
+  if (!title || !content || !category) {
+    e.preventDefault();
+    alert('Veuillez remplir tous les champs obligatoires.');
+    return false;
+  }
+  
+  if (content.length < 10) {
+    e.preventDefault();
+    alert('Le contenu doit contenir au moins 10 caractères.');
+    return false;
+  }
+});
+</script>
+{% endblock %}
