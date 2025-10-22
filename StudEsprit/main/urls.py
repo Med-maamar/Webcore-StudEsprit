@@ -11,6 +11,7 @@ urlpatterns = [
     path("auth/", include("accounts.urls")),
     path("account/", include((account_urlpatterns, "accounts"), namespace="account")),
     path("dashboard/", include("dashboard.urls")),
+    path("library/", include("library.urls")),
     # Stubs (coming soon pages)
     path("courses/", coming_soon, name="courses"),
     path("services/", coming_soon, name="services"),
