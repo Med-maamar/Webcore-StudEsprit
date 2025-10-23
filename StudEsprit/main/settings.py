@@ -11,8 +11,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
 DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"}
-
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+CSRF_TRUSTED_ORIGINS = [
+    'https://webcore-studesprit.onrender.com',
+]
+ALLOWED_HOSTS = ['webcore-studesprit.onrender.com', 'localhost', '127.0.0.1']
 
 APP_VERSION = "0.1.0"
 
@@ -28,8 +30,9 @@ INSTALLED_APPS = [
     "accounts",
     "dashboard",
     "ai",
-        "evenement",
-    ]
+    "library",
+  "evenement",
+]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -125,6 +128,9 @@ MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "studesprit")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "")
+
+# OpenAI API
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
 # Configure logging without Django's DEFAULT_LOGGING (avoids mail_admins)
 LOGGING_CONFIG = None

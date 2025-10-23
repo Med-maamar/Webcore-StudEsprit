@@ -44,3 +44,29 @@ def ensure_indexes() -> None:
     db.users.create_index("created_at")
     db.users.create_index("last_login_at")
     db.audit_auth.create_index("created_at")
+    
+    # Library indexes
+    try:
+        # Document indexes
+        db.documents.create_index("user_id")
+        db.documents.create_index("created_at")
+        db.documents.create_index("is_processed")
+        db.documents.create_index([("user_id", 1), ("created_at", -1)])
+        
+        # Chat session indexes
+        db.chat_sessions.create_index("user_id")
+        db.chat_sessions.create_index("document_id")
+        db.chat_sessions.create_index("created_at")
+        db.chat_sessions.create_index([("user_id", 1), ("updated_at", -1)])
+        
+        # Community indexes
+        db.community_posts.create_index("user_id")
+        db.community_posts.create_index("category")
+        db.community_posts.create_index("created_at")
+        db.community_posts.create_index("is_pinned")
+        db.community_posts.create_index("is_solved")
+        db.community_posts.create_index([("category", 1), ("created_at", -1)])
+        db.community_posts.create_index([("is_pinned", -1), ("updated_at", -1)])
+        db.community_posts.create_index("tags")
+    except PyMongoError:
+        pass

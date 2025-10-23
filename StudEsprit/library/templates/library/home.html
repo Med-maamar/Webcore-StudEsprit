@@ -1,0 +1,689 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+  <div class="space-y-8">
+    <!-- Enhanced Header -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-3 mb-2">
+            <div class="p-3 bg-gradient-to-r from-esprit-red to-red-600 rounded-xl">
+              <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+              </svg>
+            </div>
+            <div>
+              <h1 class="text-4xl font-bold bg-gradient-to-r from-esprit-dark to-gray-800 bg-clip-text text-transparent">Bibliothèque IA</h1>
+              <p class="text-gray-600 mt-1 text-lg">Gérez vos documents et interrogez-les avec l'intelligence artificielle</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="{% url 'library:upload' %}" class="bg-gradient-to-r from-esprit-red to-red-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Ajouter un document
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-200 cursor-pointer" onclick="showQuickActions()">
+        <div class="flex items-center gap-4">
+          <div class="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-900">Actions Rapides</h3>
+            <p class="text-sm text-gray-600">IA, Analyse, Export</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-200 cursor-pointer" onclick="showAnalytics()">
+        <div class="flex items-center gap-4">
+          <div class="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-xl">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-900">Analytics</h3>
+            <p class="text-sm text-gray-600">Statistiques & Insights</p>
+          </div>
+        </div>
+      </div>
+      
+      <a href="{% url 'library:community' %}" class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-200 cursor-pointer group">
+        <div class="flex items-center gap-4">
+          <div class="p-3 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl group-hover:from-purple-600 group-hover:to-purple-700 transition-all duration-200">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-900 group-hover:text-purple-600 transition-colors">Communauté</h3>
+            <p class="text-sm text-gray-600">Partagez & Aidez</p>
+          </div>
+        </div>
+      </a>
+      
+      <div class="bg-white rounded-xl shadow-lg border border-gray-200 p-6 hover:shadow-xl transition-all duration-200 cursor-pointer" onclick="showSettings()">
+        <div class="flex items-center gap-4">
+          <div class="p-3 bg-gradient-to-r from-gray-500 to-gray-600 rounded-xl">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-semibold text-gray-900">Paramètres</h3>
+            <p class="text-sm text-gray-600">Configuration IA</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents List -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <div class="p-8 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-2xl font-bold text-esprit-dark">Mes Documents</h2>
+            <p class="text-gray-600 mt-1">{{ total_documents }} document{{ total_documents|pluralize }} dans votre bibliothèque</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <input type="text" placeholder="Rechercher..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-esprit-red focus:border-transparent">
+              <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+            <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-esprit-red focus:border-transparent">
+              <option>Tous</option>
+              <option>Traités</option>
+              <option>En cours</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      {% if documents %}
+        <div class="divide-y divide-gray-100">
+          {% for document in documents %}
+            <div class="p-6 hover:bg-gradient-to-r hover:from-gray-50 hover:to-white transition-all duration-200 group">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-6">
+                  <div class="p-4 bg-gradient-to-r from-red-100 to-red-50 rounded-xl group-hover:from-red-200 group-hover:to-red-100 transition-all duration-200">
+                    <svg class="w-8 h-8 text-esprit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                  </div>
+                  <div class="flex-1">
+                    <h3 class="font-bold text-lg text-esprit-dark group-hover:text-esprit-red transition-colors">{{ document.title }}</h3>
+                    <div class="flex items-center gap-6 text-sm text-gray-600 mt-2">
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        {{ document.filename }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path>
+                        </svg>
+                        {{ document.file_size|filesizeformat }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        {{ document.created_at|date:"d/m/Y H:i" }}
+                      </span>
+                      {% if document.is_processed %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300">
+                          <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                          </svg>
+                          Prêt pour l'IA
+                        </span>
+                      {% else %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border border-yellow-300">
+                          <svg class="w-3 h-3 mr-1 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Traitement en cours
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  {% if document.is_processed %}
+                    <div class="flex items-center gap-2">
+                      <button onclick="showDocumentActions('{{ document.id }}')" class="p-2 text-gray-600 hover:text-esprit-red hover:bg-red-50 rounded-lg transition-all duration-200" title="Actions IA">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                      </button>
+                      <a href="{% url 'library:reader' document.id %}" class="bg-gradient-to-r from-esprit-red to-red-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                        Chat IA
+                      </a>
+                    </div>
+                  {% endif %}
+                  <button onclick="deleteDocument('{{ document.id }}')" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200" title="Supprimer">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="p-16 text-center">
+          <div class="p-6 bg-gradient-to-r from-gray-100 to-gray-200 rounded-full w-24 h-24 mx-auto mb-6">
+            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-3">Votre bibliothèque est vide</h3>
+          <p class="text-gray-600 mb-8 text-lg">Commencez par ajouter votre premier document PDF et explorez la puissance de l'IA</p>
+          <a href="{% url 'library:upload' %}" class="bg-gradient-to-r from-esprit-red to-red-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-200 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1 mx-auto w-fit">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Ajouter votre premier document
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Document Actions Modal -->
+<div id="documentActionsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xl font-bold text-gray-900">Actions IA</h3>
+        <button onclick="closeDocumentActions()" class="text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="space-y-4">
+        <button onclick="generateSummary()" class="w-full p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center gap-3">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Générer un résumé
+        </button>
+        
+        <button onclick="generateQA()" class="w-full p-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center gap-3">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Générer Q&A
+        </button>
+        
+        <button onclick="analyzeDocument()" class="w-full p-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-200 flex items-center gap-3">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+          Analyser le document
+        </button>
+        
+        <button onclick="exportDocument()" class="w-full p-4 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-xl font-semibold hover:from-gray-600 hover:to-gray-700 transition-all duration-200 flex items-center gap-3">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Exporter
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentDocumentId = null;
+
+function showDocumentActions(docId) {
+  currentDocumentId = docId;
+  document.getElementById('documentActionsModal').classList.remove('hidden');
+}
+
+function closeDocumentActions() {
+  document.getElementById('documentActionsModal').classList.add('hidden');
+  currentDocumentId = null;
+}
+
+function generateSummary() {
+  if (!currentDocumentId) return;
+  
+  // Show loading state
+  const button = event.target;
+  const originalText = button.innerHTML;
+  button.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Génération...';
+  button.disabled = true;
+  
+  fetch(`/library/api/documents/${currentDocumentId}/summary/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.summary) {
+        showResult('Résumé généré', data.summary);
+      } else {
+        showError('Erreur lors de la génération du résumé');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showError('Erreur lors de la génération du résumé');
+    })
+    .finally(() => {
+      button.innerHTML = originalText;
+      button.disabled = false;
+    });
+}
+
+function generateQA() {
+  if (!currentDocumentId) return;
+  
+  const button = event.target;
+  const originalText = button.innerHTML;
+  button.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Génération...';
+  button.disabled = true;
+  
+  fetch(`/library/api/documents/${currentDocumentId}/qa-pairs/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.qa_pairs) {
+        let qaText = 'Questions et réponses générées:\n\n';
+        data.qa_pairs.forEach((qa, index) => {
+          qaText += `${index + 1}. ${qa.question}\n   Réponse: ${qa.answer}\n\n`;
+        });
+        showResult('Q&A générées', qaText);
+      } else {
+        showError('Erreur lors de la génération des Q&A');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showError('Erreur lors de la génération des Q&A');
+    })
+    .finally(() => {
+      button.innerHTML = originalText;
+      button.disabled = false;
+    });
+}
+
+function analyzeDocument() {
+  if (!currentDocumentId) return;
+  
+  const button = event.target;
+  const originalText = button.innerHTML;
+  button.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analyse...';
+  button.disabled = true;
+  
+  fetch(`/library/api/documents/${currentDocumentId}/analysis/`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.analysis) {
+        const analysis = data.analysis;
+        let analysisText = `Analyse du document:\n\n`;
+        analysisText += `• Mots: ${analysis.word_count}\n`;
+        analysisText += `• Paragraphes: ${analysis.paragraph_count}\n`;
+        analysisText += `• Phrases: ${analysis.sentence_count}\n`;
+        analysisText += `• Temps de lecture: ${analysis.reading_time_minutes} minutes\n`;
+        analysisText += `• Score de complexité: ${analysis.complexity_score}/100\n\n`;
+        analysisText += `Mots-clés principaux: ${analysis.top_keywords.join(', ')}\n\n`;
+        if (analysis.potential_headings.length > 0) {
+          analysisText += `Sections détectées:\n${analysis.potential_headings.map(h => `• ${h}`).join('\n')}`;
+        }
+        showResult('Analyse terminée', analysisText);
+      } else {
+        showError('Erreur lors de l\'analyse du document');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showError('Erreur lors de l\'analyse du document');
+    })
+    .finally(() => {
+      button.innerHTML = originalText;
+      button.disabled = false;
+    });
+}
+
+function exportDocument() {
+  if (!currentDocumentId) return;
+  
+  const formats = ['txt', 'md', 'json'];
+  const format = prompt('Choisissez le format d\'export:\n1. TXT\n2. Markdown\n3. JSON\n\nEntrez le numéro (1-3):');
+  
+  if (format && ['1', '2', '3'].includes(format)) {
+    const formatMap = { '1': 'txt', '2': 'md', '3': 'json' };
+    window.open(`/library/api/documents/${currentDocumentId}/export/?format=${formatMap[format]}`, '_blank');
+  }
+}
+
+function showResult(title, content) {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-bold text-gray-900">${title}</h3>
+          <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 overflow-y-auto max-h-[60vh]">
+        <pre class="whitespace-pre-wrap text-sm text-gray-700">${content}</pre>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function showError(message) {
+  alert(message);
+}
+
+function deleteDocument(docId) {
+  if (confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) {
+    fetch(`/library/api/documents/${docId}/delete/`, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      },
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        location.reload();
+      } else {
+        alert('Erreur lors de la suppression du document');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Erreur lors de la suppression du document');
+    });
+  }
+}
+
+// Implemented functions for dashboard features
+function showQuickActions() {
+  fetch('/library/api/quick-actions/')
+    .then(response => response.json())
+    .then(data => {
+      if (data.quick_actions) {
+        showQuickActionsModal(data.quick_actions);
+      } else {
+        alert('Erreur lors du chargement des actions rapides');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Erreur lors du chargement des actions rapides');
+    });
+}
+
+function showAnalytics() {
+  fetch('/library/api/analytics/')
+    .then(response => response.json())
+    .then(data => {
+      if (data.analytics) {
+        showAnalyticsModal(data.analytics);
+      } else {
+        alert('Erreur lors du chargement des analytics');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Erreur lors du chargement des analytics');
+    });
+}
+
+function showCollaboration() {
+  fetch('/library/api/collaboration/')
+    .then(response => response.json())
+    .then(data => {
+      if (data.collaboration) {
+        showCollaborationModal(data.collaboration);
+      } else {
+        alert('Erreur lors du chargement des données de collaboration');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Erreur lors du chargement des données de collaboration');
+    });
+}
+
+function showSettings() {
+  alert('Paramètres en cours de développement');
+}
+
+// Modal functions
+function showQuickActionsModal(data) {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-bold text-gray-900">Actions Rapides</h3>
+          <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 overflow-y-auto max-h-[60vh]">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4">
+            <h4 class="font-semibold text-blue-900 mb-2">Documents Récents</h4>
+            <div class="space-y-2">
+              ${data.recent_documents.map(doc => `
+                <div class="flex items-center justify-between bg-white rounded-lg p-2">
+                  <span class="text-sm font-medium">${doc.title}</span>
+                  <span class="text-xs ${doc.is_processed ? 'text-green-600' : 'text-yellow-600'}">
+                    ${doc.is_processed ? '✓' : '⏳'}
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+          <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-4">
+            <h4 class="font-semibold text-green-900 mb-2">Sessions Récentes</h4>
+            <div class="space-y-2">
+              ${data.recent_sessions.map(session => `
+                <div class="flex items-center justify-between bg-white rounded-lg p-2">
+                  <span class="text-sm font-medium">Session</span>
+                  <span class="text-xs text-gray-600">${session.message_count} messages</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-6 grid grid-cols-2 gap-4">
+          <div class="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-purple-900">${data.total_documents}</div>
+            <div class="text-sm text-purple-700">Documents Total</div>
+          </div>
+          <div class="bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold text-orange-900">${data.total_sessions}</div>
+            <div class="text-sm text-orange-700">Sessions Total</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function showAnalyticsModal(data) {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-bold text-gray-900">Analytics & Statistiques</h3>
+          <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 overflow-y-auto max-h-[60vh]">
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold">${data.total_documents}</div>
+            <div class="text-sm opacity-90">Documents</div>
+          </div>
+          <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold">${data.processed_documents}</div>
+            <div class="text-sm opacity-90">Traités</div>
+          </div>
+          <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold">${data.total_chat_messages}</div>
+            <div class="text-sm opacity-90">Messages</div>
+          </div>
+          <div class="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl p-4 text-center">
+            <div class="text-2xl font-bold">${data.total_words.toLocaleString()}</div>
+            <div class="text-sm opacity-90">Mots</div>
+          </div>
+        </div>
+        
+        <!-- Additional Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="bg-gray-50 rounded-xl p-4">
+            <div class="text-lg font-semibold text-gray-900">${data.processing_rate}%</div>
+            <div class="text-sm text-gray-600">Taux de traitement</div>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-4">
+            <div class="text-lg font-semibold text-gray-900">${data.avg_messages_per_session}</div>
+            <div class="text-sm text-gray-600">Messages/session</div>
+          </div>
+          <div class="bg-gray-50 rounded-xl p-4">
+            <div class="text-lg font-semibold text-gray-900">${data.avg_words_per_document}</div>
+            <div class="text-sm text-gray-600">Mots/document</div>
+          </div>
+        </div>
+        
+        <!-- Most Active Documents -->
+        <div class="mb-6">
+          <h4 class="text-lg font-semibold text-gray-900 mb-3">Documents les plus actifs</h4>
+          <div class="space-y-2">
+            ${data.most_active_documents.map((doc, index) => `
+              <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 bg-gradient-to-r from-esprit-red to-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                    ${index + 1}
+                  </div>
+                  <span class="font-medium">${doc.title}</span>
+                </div>
+                <span class="text-sm text-gray-600">${doc.message_count} messages</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div>
+          <h4 class="text-lg font-semibold text-gray-900 mb-3">Activité récente</h4>
+          <div class="space-y-2">
+            ${data.recent_activity.map(activity => `
+              <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                <span class="font-medium">${activity.document_title}</span>
+                <span class="text-sm text-gray-600">${activity.message_count} messages</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function showCollaborationModal(data) {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+  modal.innerHTML = `
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-bold text-gray-900">Collaboration</h3>
+          <button onclick="this.closest('.fixed').remove()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 overflow-y-auto max-h-[60vh]">
+        <div class="text-center py-12">
+          <div class="p-4 bg-gradient-to-r from-purple-100 to-purple-200 rounded-full w-16 h-16 mx-auto mb-4">
+            <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-3">Collaboration en cours de développement</h3>
+          <p class="text-gray-600 mb-6">Les fonctionnalités de collaboration et de partage de documents seront bientôt disponibles.</p>
+          
+          <div class="grid grid-cols-2 gap-4 max-w-md mx-auto">
+            <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-4 text-center">
+              <div class="text-2xl font-bold text-blue-900">${data.total_documents}</div>
+              <div class="text-sm text-blue-700">Documents</div>
+            </div>
+            <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-4 text-center">
+              <div class="text-2xl font-bold text-green-900">${data.shared_documents}</div>
+              <div class="text-sm text-green-700">Partagés</div>
+            </div>
+          </div>
+          
+          <div class="mt-6">
+            <h4 class="font-semibold text-gray-900 mb-2">Fonctionnalités à venir :</h4>
+            <ul class="text-sm text-gray-600 space-y-1">
+              <li>• Partage de documents avec d'autres utilisateurs</li>
+              <li>• Collaboration en temps réel</li>
+              <li>• Gestion des permissions</li>
+              <li>• Commentaires et annotations</li>
+              <li>• Notifications de collaboration</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+</script>
+{% endblock %}
