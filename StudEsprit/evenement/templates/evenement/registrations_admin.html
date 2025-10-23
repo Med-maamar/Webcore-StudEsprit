@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Inscriptions à valider pour : {{ event.title }}</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Nom</th>
+      <th>Email</th>
+      <th>Motivation</th>
+      <th>Infos supp.</th>
+      <th>Statut</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for reg in registrations %}
+    <tr>
+      <td>{{ reg.full_name }}</td>
+      <td>{{ reg.email }}</td>
+      <td>{{ reg.motivation }}</td>
+      <td>{{ reg.additional_info }}</td>
+      <td>{% if reg.is_approved %}✔️ Approuvé{% else %}❌ En attente{% endif %}</td>
+      <td>
+        <form method="post" style="display:inline;">
+          {% csrf_token %}
+          <input type="hidden" name="reg_id" value="{{ reg.id }}">
+          <button name="action" value="approve">Approuver</button>
+          <button name="action" value="reject">Refuser</button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6">Aucune inscription.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

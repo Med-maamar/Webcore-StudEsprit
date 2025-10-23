@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="max-width:600px; margin: 0 auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+  <h2 style="margin-bottom: 20px; font-size: 1.6rem; color: #333;">Créer un événement</h2>
+  {% if form.errors %}
+    <div style="color: red; margin-bottom: 15px;">
+      <ul style="list-style-type: none; padding: 0;">
+        {% for field in form %}
+          {% for error in field.errors %}
+            <li style="margin-bottom: 5px;">{{ field.label }} : {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <li style="margin-bottom: 5px;">{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+  <form method="post" style="display: flex; flex-direction: column; gap: 15px;">
+    {% csrf_token %}
+    {{ form.as_p|safe }}
+    <style>
+      #id_title,
+      #id_description,
+      #id_start_datetime,
+      #id_end_datetime,
+      #id_location {
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      #id_title {
+        height: 40px; /* Standard height for title input */
+      }
+      #id_description {
+        height: 80px; /* Slightly larger than title, adjustable */
+        resize: vertical; /* Allows vertical resizing if needed */
+      }
+      #id_start_datetime,
+      #id_end_datetime {
+        height: 40px; /* Match title height */
+      }
+      #id_location {
+        height: 40px; /* Match title height */
+      }
+    </style>
+    <button type="submit" style="background: #1f73e6; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; width: 100%; box-sizing: border-box;">Créer</button>
+  </form>
+</div>
+{% endblock %}

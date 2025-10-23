@@ -1,4 +1,5 @@
 from django.urls import include, path
+from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -7,6 +8,7 @@ from accounts.urls import account_urlpatterns
 
 
 urlpatterns = [
+    path("admin/", admin.site.urls),
     path("", home, name="home"),
     path("auth/", include("accounts.urls")),
     path("account/", include((account_urlpatterns, "accounts"), namespace="account")),
@@ -14,7 +16,7 @@ urlpatterns = [
     # Stubs (coming soon pages)
     path("courses/", coming_soon, name="courses"),
     path("services/", coming_soon, name="services"),
-    path("events/", coming_soon, name="events"),
+    path("events/", include("evenement.urls")),
     path("shop/", coming_soon, name="shop"),
 ]
 

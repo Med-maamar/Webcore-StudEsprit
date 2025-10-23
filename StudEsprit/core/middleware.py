@@ -47,6 +47,26 @@ class SessionUserMiddleware(MiddlewareMixin):
                 self.email = d.get("email", "")
                 self.username = d.get("username", "")
                 self.role = d.get("role", "Student")
+                # Admin Django required attributes
+                self.is_active = True
+                self.is_staff = d.get("role", "").lower() in {"admin", "superuser"}
+                self.is_superuser = d.get("role", "").lower() == "superuser"
+
+            @property
+            def is_authenticated(self):
+                return True
+
+            def has_perm(self, perm, obj=None):
+                return self.is_superuser
+
+            def has_module_perms(self, app_label):
+                return self.is_superuser
+
+            def get_username(self):
+                return self.username
+
+            def __str__(self):
+                return self.username
 
             @property
             def is_authenticated(self):

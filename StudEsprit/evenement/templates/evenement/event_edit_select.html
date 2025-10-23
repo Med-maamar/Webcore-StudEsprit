@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="max-width:600px; margin: 0 auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+  <h2 style="margin-bottom: 20px; font-size: 1.6rem; color: #333;">Modifier l'événement : {{ event.title }}</h2>
+  <div style="display: flex; flex-direction: column; gap: 15px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-weight: bold; min-width: 120px;">Titre:</span>
+      <span>{{ event.title }}</span>
+      <form method="get" action="{% url 'evenement:event_edit' event.id %}" style="margin: 0;">
+        <input type="hidden" name="field" value="title">
+        <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #f6a623; padding: 0;">✏️</button>
+      </form>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-weight: bold; min-width: 120px;">Description:</span>
+      <span>{{ event.description }}</span>
+      <form method="get" action="{% url 'evenement:event_edit' event.id %}" style="margin: 0;">
+        <input type="hidden" name="field" value="description">
+        <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #f6a623; padding: 0;">✏️</button>
+      </form>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-weight: bold; min-width: 120px;">Date de début:</span>
+      <span>{{ event.start_datetime|date:'d/m/Y H:i' }}</span>
+      <form method="get" action="{% url 'evenement:event_edit' event.id %}" style="margin: 0;">
+        <input type="hidden" name="field" value="start_datetime">
+        <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #f6a623; padding: 0;">✏️</button>
+      </form>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-weight: bold; min-width: 120px;">Date de fin:</span>
+      <span>{% if event.end_datetime %}{{ event.end_datetime|date:'d/m/Y H:i' }}{% else %}-{% endif %}</span>
+      <form method="get" action="{% url 'evenement:event_edit' event.id %}" style="margin: 0;">
+        <input type="hidden" name="field" value="end_datetime">
+        <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #f6a623; padding: 0;">✏️</button>
+      </form>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-weight: bold; min-width: 120px;">Lieu:</span>
+      <span>{{ event.location }}</span>
+      <form method="get" action="{% url 'evenement:event_edit' event.id %}" style="margin: 0;">
+        <input type="hidden" name="field" value="location">
+        <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #f6a623; padding: 0;">✏️</button>
+      </form>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-weight: bold; min-width: 120px;">Public:</span>
+      <span>{% if event.is_public %}Oui{% else %}Non{% endif %}</span>
+      <form method="get" action="{% url 'evenement:event_edit' event.id %}" style="margin: 0;">
+        <input type="hidden" name="field" value="is_public">
+        <button type="submit" style="background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #f6a623; padding: 0;">✏️</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
