@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="text-align:left; margin-bottom:1em; display:flex; flex-direction:column; align-items:flex-start; gap:0.4rem;">
+  <h1 style="margin:0; display:inline-block; font-size:1.6rem; font-weight:700;">Liste des événements</h1>
+  <a href="{% url 'evenement:event_create' %}" role="button" style="display:inline-block;background:#d6232a;color:#fff;padding:6px 10px;border-radius:9999px;text-decoration:none;border:1px solid rgba(0,0,0,0.08);box-shadow:0 1px 3px rgba(0,0,0,0.04);font-size:0.9rem;">Créer un événement</a>
+</div>
+<table style="width:100%; max-width:900px; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px #eee;">
+  <thead style="background:#f5f5f5;">
+    <tr>
+      <th style="padding:10px; text-align:left;">Titre</th>
+      <th style="padding:10px; text-align:left;">Date</th>
+      <th style="padding:10px; text-align:left;">Lieu</th>
+      <th style="padding:10px; text-align:left;">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for event in events %}
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:10px;">{{ event.title }}</td>
+      <td style="padding:10px;">{{ event.start_datetime|date:'d/m/Y H:i' }}</td>
+      <td style="padding:10px;">{{ event.location }}</td>
+      <td style="padding:10px;">
+        <a href="{% url 'evenement:event_detail' event.id %}" title="Afficher" style="margin-right:8px;">
+          <span style="font-size:18px;">👁️</span>
+        </a>
+        <a href="{% url 'evenement:event_edit' event.id %}" title="Modifier" style="margin-right:8px;">
+          <span style="font-size:18px;">✏️</span>
+        </a>
+        <form method="post" action="{% url 'evenement:event_delete' event.id %}" style="display:inline;" class="delete-event-form">
+          {% csrf_token %}
+          <button type="submit" title="Supprimer" style="background:none;border:none;cursor:pointer;padding:0;margin:0;">
+            <span style="font-size:18px; color:#c00;">🗑️</span>
+          </button>
+        </form>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" style="padding:10px; text-align:center;">Aucun événement pour le moment.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+<script>
+  // Confirmation before deleting an event. If JS disabled, server-side confirmation still applies.
+  (function(){
+    document.addEventListener('DOMContentLoaded', function(){
+      document.querySelectorAll('form.delete-event-form').forEach(function(form){
+        form.addEventListener('submit', function(e){
+          var ok = confirm('Voulez-vous vraiment supprimer cet événement ?');
+          if(!ok){
+            e.preventDefault();
+          }
+        });
+      });
+    });
+  })();
+</script>
+{% endblock %}

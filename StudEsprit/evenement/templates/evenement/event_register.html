@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Inscription à l'événement : {{ event.title }}</h2>
+<form method="post">
+  {% csrf_token %}
+  <div>
+    <label>Nom complet :</label>
+    <input type="text" name="full_name" required>
+  </div>
+  <div>
+    <label>Email :</label>
+    <input type="email" name="email" required>
+  </div>
+  <div>
+    <label>Motivation :</label>
+    <textarea name="motivation"></textarea>
+  </div>
+  <div>
+    <label>Informations supplémentaires :</label>
+    <textarea name="additional_info"></textarea>
+  </div>
+  <button type="submit">Envoyer l'inscription</button>
+</form>
+{% endblock %}

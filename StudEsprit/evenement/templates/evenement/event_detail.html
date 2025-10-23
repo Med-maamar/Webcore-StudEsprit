@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div style="max-width:900px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+  <div style="display:flex;justify-content:space-between;align-items:start;gap:1rem;">
+    <div>
+      <h2 style="margin:0 0 6px 0;font-size:1.6rem;">{{ event.title }}</h2>
+      <div style="color:#666;font-size:0.95rem;margin-bottom:8px;">
+        <strong>Description :</strong> {{ event.description }}
+      </div>
+      <div style="display:flex;gap:1.5rem;color:#333;margin-bottom:8px;">
+        <div><strong>Date :</strong> {{ event.start_datetime|date:'d/m/Y H:i' }}{% if event.end_datetime %} — {{ event.end_datetime|date:'d/m/Y H:i' }}{% endif %}</div>
+        <div><strong>Lieu :</strong> {{ event.location|default:'N/A' }}</div>
+        <div><strong>Organisateur :</strong> {% if event.organizer %}{{ event.organizer }}{% else %}None{% endif %}</div>
+        <div><strong>Public :</strong> {{ event.is_public|yesno:'Oui,Non' }}</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+      {% if user.is_authenticated %}
+        <a href="{% url 'evenement:event_register' event.id %}" style="background:#1f73e6;color:#fff;padding:8px 12px;border-radius:6px;text-decoration:none;">S'inscrire</a>
+      {% else %}
+        <a href="{% url 'login' %}" style="background:#1f73e6;color:#fff;padding:8px 12px;border-radius:6px;text-decoration:none;">Connectez-vous</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

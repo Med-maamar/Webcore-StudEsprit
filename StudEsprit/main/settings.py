@@ -19,6 +19,7 @@ ALLOWED_HOSTS = ['webcore-studesprit.onrender.com', 'localhost', '127.0.0.1']
 APP_VERSION = "0.1.0"
 
 INSTALLED_APPS = [
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -30,6 +31,7 @@ INSTALLED_APPS = [
     "dashboard",
     "ai",
     "library",
+  "evenement",
 ]
 
 MIDDLEWARE = [
@@ -37,6 +39,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     # Custom middleware that injects request.user from Mongo session
     "core.middleware.SessionUserMiddleware",
@@ -53,6 +56,7 @@ TEMPLATES = [
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.global_context",
             ],
@@ -63,9 +67,12 @@ TEMPLATES = [
 WSGI_APPLICATION = "main.wsgi.application"
 
 
-# Database: Using MongoDB via PyMongo (no Django ORM DB)
-# See core/mongo.py for client configuration. No DATABASES configured.
-
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
 
 # Sessions: signed cookie sessions to avoid DB dependency
 SESSION_ENGINE = "django.contrib.sessions.backends.signed_cookies"
