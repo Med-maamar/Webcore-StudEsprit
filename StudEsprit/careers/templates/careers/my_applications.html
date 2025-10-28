@@ -59,3 +59,13 @@
   {% endif %}
 </div>
 {% endblock %}
+<script>
+  // Rafraîchir automatiquement la page quand une action API le demande
+  document.body.addEventListener('applications-refresh', function(){
+    window.location.reload();
+  });
+  // Optionnel: activer htmx boost pour les liens internes
+  document.body.setAttribute('hx-boost', 'true');
+  document.body.setAttribute('hx-target', 'main');
+  document.body.setAttribute('hx-swap', 'innerHTML');
+</script>

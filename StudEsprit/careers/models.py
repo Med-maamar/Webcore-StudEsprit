@@ -98,6 +98,7 @@ class Application(me.Document):
             "user_id",
             "status",
             "created_at",
+            {"fields": ["user_id", "opportunity"], "unique": True, "name": "uniq_user_opportunity"},
         ],
         "ordering": ["-created_at"],
     }

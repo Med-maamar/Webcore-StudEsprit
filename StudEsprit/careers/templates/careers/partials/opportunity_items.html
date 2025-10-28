@@ -9,7 +9,23 @@
           </div>
           <p class="text-sm text-gray-500">Date limite: {{ opportunity.deadline|date:"Y-m-d H:i" }}</p>
         </div>
-        <p class="mt-3 text-gray-700">{{ opportunity.description|default:"No description provided" }}</p>
+        {% if opportunity.description %}
+          <div class="mt-3">
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 text-sm text-esprit-red hover:text-[#a00d26] px-2 py-1 rounded-full hover:bg-red-50"
+              onclick="(function(btn){var d=document.getElementById('desc-{{ opportunity.id }}');var open=d.classList.toggle('hidden')===false; btn.querySelector('[data-label]').textContent=open?'Masquer la description':'Voir la description'; btn.querySelector('[data-caret]').textContent=open?'▾':'▸';})(this)"
+            >
+              <span data-caret>▸</span>
+              <span data-label>Voir la description</span>
+            </button>
+            <div id="desc-{{ opportunity.id }}" class="hidden mt-2 text-gray-700 whitespace-pre-line">
+              {{ opportunity.description }}
+            </div>
+          </div>
+        {% else %}
+          <p class="mt-3 text-gray-500 text-sm">Pas de description fournie</p>
+        {% endif %}
         <div class="mt-3 flex flex-wrap gap-2">
           {% for skill in opportunity.skills %}
             <span class="px-2 py-1 text-xs bg-red-50 text-esprit-red rounded-full border border-red-200">{{ skill }}</span>

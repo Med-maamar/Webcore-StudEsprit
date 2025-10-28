@@ -7,23 +7,12 @@
   {% csrf_token %}
   {% if errors %}
     <div class="p-2 rounded bg-red-50 text-red-700 border border-red-200 text-sm">
-      Please correct the highlighted fields.
+      Merci de corriger les champs en erreur.
     </div>
   {% endif %}
 
-  <div>
-    <label class="block text-sm font-medium text-gray-600">Statut</label>
-    <select name="status" class="mt-1 w-full border rounded px-3 py-2">
-      <option value="draft" {% if initial.status == 'draft' %}selected{% endif %}>Brouillon</option>
-      <option value="submitted" {% if initial.status == 'submitted' %}selected{% endif %}>Soumise</option>
-      <option value="interview" {% if initial.status == 'interview' %}selected{% endif %}>Entretien</option>
-      <option value="offered" {% if initial.status == 'offered' %}selected{% endif %}>Offre</option>
-      <option value="rejected" {% if initial.status == 'rejected' %}selected{% endif %}>Refusée</option>
-    </select>
-    {% if errors.status %}
-      <p class="text-sm text-red-600 mt-1">{{ errors.status|join:', ' }}</p>
-    {% endif %}
-  </div>
+  <!-- Statut caché: Soumise par défaut -->
+  <input type="hidden" name="status" value="submitted" />
 
   <div>
     <label class="block text-sm font-medium text-gray-600">Mon CV</label>
@@ -79,6 +68,6 @@
     >
       Annuler
     </button>
-    <button type="submit" class="px-4 py-2 bg-esprit-red text-white rounded-full hover:bg-[#a00d26]">Soumettre la candidature</button>
+    <button type="submit" class="px-4 py-2 bg-esprit-red text-white rounded-full hover:bg-[#a00d26]" hx-disabled-elt="this">Soumettre la candidature</button>
   </div>
 </form>

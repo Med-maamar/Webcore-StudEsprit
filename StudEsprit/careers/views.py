@@ -394,6 +394,15 @@ class OpportunityApplyView(LoginRequiredMixin, View):
         from .permissions import _is_staff
         if _is_staff(request.user):
             raise Http404("Admins cannot apply to opportunities")
+        # If already applied, show success summary instead of form
+        existing = Application.objects(user_id=str(request.user.id), opportunity=opportunity).first()
+        if existing:
+            return render(
+                request,
+                "careers/partials/application_success.html",
+                {"opportunity": opportunity, "application": existing},
+                status=200,
+            )
         serializer = ApplicationSerializer()
         # Fetch saved CV and cover letters for this user
         profile = CVProfile.objects(user_id=str(request.user.id)).first()
@@ -424,8 +433,19 @@ class OpportunityApplyView(LoginRequiredMixin, View):
         serializer = ApplicationSerializer(data=data, context={"request": request})
         template = "careers/partials/application_success.html"
         if serializer.is_valid():
-            serializer.save()
-            context = {"opportunity": opportunity, "application": serializer.data}
+            try:
+                serializer.save()
+            except Exception as e:
+                # Handle duplicate index race or NotUniqueError gracefully
+                from mongoengine.errors import NotUniqueError
+                from pymongo.errors import DuplicateKeyError
+                if isinstance(e, (NotUniqueError, DuplicateKeyError)):
+                    existing = Application.objects(user_id=str(request.user.id), opportunity=opportunity).first()
+                    if existing:
+                        return render(request, template, {"opportunity": opportunity, "application": existing}, status=200)
+                # Unexpected error: re-raise
+                raise
+            context = {"opportunity": opportunity, "application": serializer.instance}
             return render(request, template, context, status=201)
         context = {
             "opportunity": opportunity,
@@ -623,7 +643,10 @@ class InterviewPrepHTMLView(LoginRequiredMixin, View):
         # Save to application for later review
         app.interview_prep = result
         app.save()
-        return render(request, self.template_name, {"result": result, "app_id": str(app.id)})
+        resp = render(request, self.template_name, {"result": result, "app_id": str(app.id)})
+        # Notify page to refresh (htmx client can choose to reload)
+        resp["HX-Trigger"] = "applications-refresh"
+        return resp
 
 
 class InterviewPrepDeleteView(LoginRequiredMixin, View):
@@ -633,4 +656,6 @@ class InterviewPrepDeleteView(LoginRequiredMixin, View):
             raise Http404("Application not found")
         app.interview_prep = None
         app.save()
-        return HttpResponse("", status=204)
+        resp = HttpResponse("", status=204)
+        resp["HX-Trigger"] = "applications-refresh"
+        return resp

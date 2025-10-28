@@ -109,6 +109,12 @@ class ApplicationSerializer(me_serializers.DocumentSerializer):
             raise serializers.ValidationError({"opportunity": "Opportunity not found."})
         validated_data["opportunity"] = opp
         validated_data["user_id"] = str(request.user.id)
+        # Prevent duplicate applications for the same user/opportunity
+        from .models import Application as AppModel
+        if AppModel.objects(user_id=validated_data["user_id"], opportunity=opp).first():
+            raise serializers.ValidationError({
+                "non_field_errors": ["Vous avez déjà postulé à cette opportunité."],
+            })
         return super().create(validated_data)
 
     def update(self, instance: Application, validated_data: dict[str, Any]) -> Application:

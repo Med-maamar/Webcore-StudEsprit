@@ -2,8 +2,20 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto py-8 px-4">
-  <div class="bg-white rounded-2xl shadow border border-gray-200 p-6 mb-6">
+  <div class="bg-white rounded-2xl shadow border border-gray-200 p-6 mb-6 relative">
     <h1 class="text-3xl font-semibold mb-4">Carrières</h1>
+    {% if current_user and current_user.is_authenticated and current_user.role|lower == 'admin' %}
+      <button
+        type="button"
+        hx-get="{% url 'careers:opportunity-create' %}"
+        hx-target="#opportunity-admin-modal-content"
+        hx-swap="innerHTML"
+        class="absolute top-4 right-4 px-4 py-2 rounded-full bg-esprit-red text-white shadow hover:bg-[#a00d26]"
+        title="Créer une nouvelle opportunité"
+      >
+        Nouvelle opportunité
+      </button>
+    {% endif %}
     <form
       hx-get="{% url 'careers:opportunity-list' %}"
       hx-target="#opportunity-results"
@@ -60,19 +72,7 @@
   {% include "careers/partials/opportunity_items.html" %}
 
   {% if current_user and current_user.is_authenticated and current_user.role|lower == 'admin' %}
-    <div class="mt-10">
-      <h2 class="text-xl font-semibold mb-3">Administration</h2>
-      <button
-        type="button"
-        hx-get="{% url 'careers:opportunity-create' %}"
-        hx-target="#opportunity-admin-modal-content"
-        hx-swap="innerHTML"
-        class="px-4 py-2 rounded bg-esprit-red text-white hover:bg-[#a00d26]"
-      >
-        Nouvelle opportunité
-      </button>
-    </div>
-    <div id="opportunity-admin-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+    <div id="opportunity-admin-modal" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50">
       <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
         <div class="flex justify-between items-center px-4 py-2 border-b">
           <h3 class="font-semibold">Créer une opportunité</h3>
