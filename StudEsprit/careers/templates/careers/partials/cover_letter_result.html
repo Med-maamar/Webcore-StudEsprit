@@ -1,0 +1,19 @@
+<div class="prose max-w-none">
+  {% if markdown %}
+    <pre class="whitespace-pre-wrap text-sm bg-gray-50 border rounded p-4">{{ markdown }}</pre>
+    <form
+      hx-post="/api/ai/cover-letter/save/"
+      hx-target="this"
+      hx-swap="outerHTML"
+      class="mt-3 flex items-center gap-2"
+    >
+      {% csrf_token %}
+      <input type="hidden" name="jobDesc" value="{{ job_desc }}" />
+      <input type="hidden" name="tone" value="{{ tone|default:'professional' }}" />
+      <button type="submit" class="px-4 py-2 rounded-full bg-esprit-red text-white hover:bg-[#a00d26]">Enregistrer</button>
+      <span class="text-sm text-gray-500">La lettre sera sauvegardée et réutilisable lors des candidatures.</span>
+    </form>
+  {% else %}
+    <p class="text-gray-600">No content generated.</p>
+  {% endif %}
+</div>

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto py-8 px-4">
+  <a href="{% url 'careers:opportunity-list' %}" class="text-esprit-red underline">← Retour à la liste</a>
+  <div class="mt-4 bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+    <h1 class="text-3xl font-semibold">{{ opportunity.role }} @ {{ opportunity.company }}</h1>
+    <p class="text-gray-600 mt-2">{{ opportunity.location|default:"Localisation flexible" }}</p>
+    <p class="mt-4 text-gray-700 whitespace-pre-line">{{ opportunity.description|default:"Pas de description fournie." }}</p>
+
+    <div class="mt-4 flex flex-wrap gap-2">
+      {% for skill in opportunity.skills %}
+        <span class="px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded-full border border-blue-200">{{ skill }}</span>
+      {% empty %}
+        <span class="text-sm text-gray-500">Aucune compétence listée</span>
+      {% endfor %}
+    </div>
+
+    <div class="mt-6 flex flex-wrap gap-3">
+      <button
+        type="button"
+        hx-get="{% url 'careers:opportunity-apply' opportunity.id %}"
+        hx-target="#apply-modal-content"
+        hx-swap="innerHTML"
+        class="px-4 py-2 rounded-full bg-esprit-red text-white hover:bg-[#a00d26]"
+      >
+        Postuler
+      </button>
+      <a
+        href="{{ opportunity.apply_url }}"
+        target="_blank"
+        rel="noopener"
+        class="px-4 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-100"
+      >
+        Lien externe
+      </a>
+    </div>
+  </div>
+
+  <div class="mt-6 bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+    <h2 class="text-2xl font-semibold mb-3">Générer une lettre de motivation</h2>
+    <form
+      hx-post="{% url 'careers:opportunity-cover-letter' opportunity.id %}"
+      hx-target="#cover-letter-result"
+      hx-swap="innerHTML"
+      class="flex items-end gap-4"
+    >
+      {% csrf_token %}
+      <div class="flex-1">
+        <label class="block text-sm font-medium text-gray-600">Ton</label>
+        <select name="tone" class="mt-1 w-full border px-2 py-1 rounded">
+          <option value="professional">Professionnel</option>
+          <option value="enthusiastic">Enthousiaste</option>
+        </select>
+      </div>
+      <button type="submit" class="px-4 py-2 bg-esprit-red text-white rounded-full hover:bg-[#a00d26]">Générer</button>
+    </form>
+    <div id="cover-letter-result" class="mt-4 text-gray-800"></div>
+  </div>
+</div>
+
+<div id="apply-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-xl w-full max-w-xl">
+    <div class="flex justify-between items-center px-4 py-2 border-b">
+      <h3 class="font-semibold">Postuler à l'opportunité</h3>
+      <button
+        type="button"
+        class="text-gray-500 hover:text-gray-700"
+        onclick="document.getElementById('apply-modal').classList.add('hidden')"
+      >
+        ✕
+      </button>
+    </div>
+    <div id="apply-modal-content" class="p-4"></div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('htmx:afterSwap', function (event) {
+    if (event.detail.target && event.detail.target.id === 'apply-modal-content') {
+      document.getElementById('apply-modal').classList.remove('hidden');
+    }
+  });
+  document.addEventListener('click', function (event) {
+    const modal = document.getElementById('apply-modal');
+    if (modal && !modal.classList.contains('hidden') && event.target === modal) {
+      modal.classList.add('hidden');
+    }
+  });
+</script>
+{% endblock %}
