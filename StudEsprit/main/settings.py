@@ -5,10 +5,10 @@ import logging.config
 from mongoengine import connect
 
 
-# Load environment variables from .env if present
-load_dotenv()
-
+# Load environment variables from project .env explicitly
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
+
 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
 DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"}
@@ -145,6 +145,10 @@ GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "")
 
 # OpenAI API
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+
+# Gemini API
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "")
 
 # Configure logging without Django's DEFAULT_LOGGING (avoids mail_admins)
 LOGGING_CONFIG = None
