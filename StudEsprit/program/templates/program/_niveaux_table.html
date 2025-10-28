@@ -1,0 +1,76 @@
+{% if niveaux %}
+<div class="w-full">
+  <div class="hidden md:block">
+    <table class="min-w-full divide-y divide-gray-100">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nom</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-100">
+        {% for n in niveaux %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ n.nom }}</td>
+          <td class="px-6 py-4 text-sm text-gray-600">{{ n.description|default:'—' }}</td>
+          <td class="px-6 py-4 text-sm text-right">
+            <div class="inline-flex items-center space-x-2">
+              <button hx-get="{% url 'niveau_edit' n.id %}" hx-target="#niveaux-modal" hx-swap="innerHTML" title="Modifier" aria-label="Modifier" class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-blue-600 text-white hover:bg-blue-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path d="M17.414 2.586a2 2 0 0 0-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 0 0 0-2.828z" />
+                  <path fill-rule="evenodd" d="M2 15.25V18h2.75l8.386-8.386-2.75-2.75L2 15.25z" clip-rule="evenodd" />
+                </svg>
+              </button>
+
+              <form method="post" hx-post="{% url 'niveau_delete' n.id %}" hx-target="#niveaux-panel" hx-swap="outerHTML" class="inline-block">
+                {% csrf_token %}
+                <button type="submit" title="Supprimer" aria-label="Supprimer" class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-red-600 text-white hover:bg-red-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H3a1 1 0 100 2h14a1 1 0 100-2h-2V3a1 1 0 00-1-1H6zm2 6a1 1 0 10-2 0v6a1 1 0 102 0V8zm4 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile list -->
+  <div class="md:hidden space-y-3 p-4">
+    {% for n in niveaux %}
+    <div class="bg-white p-4 rounded-xl shadow flex items-start justify-between">
+      <div>
+        <div class="text-sm font-semibold text-gray-900">{{ n.nom }}</div>
+        <div class="text-sm text-gray-600 mt-1">{{ n.description|default:'—' }}</div>
+      </div>
+        <div class="flex-shrink-0 ml-4 space-y-2 text-right">
+          <div>
+            <button hx-get="{% url 'niveau_edit' n.id %}" hx-target="#niveaux-modal" hx-swap="innerHTML" title="Modifier" aria-label="Modifier" class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-blue-600 text-white hover:bg-blue-700">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M17.414 2.586a2 2 0 0 0-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 0 0 0-2.828z" />
+                <path fill-rule="evenodd" d="M2 15.25V18h2.75l8.386-8.386-2.75-2.75L2 15.25z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
+          <div>
+            <form method="post" hx-post="{% url 'niveau_delete' n.id %}" hx-target="#niveaux-panel" hx-swap="outerHTML">
+              {% csrf_token %}
+              <button type="submit" title="Supprimer" aria-label="Supprimer" class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-red-600 text-white hover:bg-red-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H3a1 1 0 100 2h14a1 1 0 100-2h-2V3a1 1 0 00-1-1H6zm2 6a1 1 0 10-2 0v6a1 1 0 102 0V8zm4 0a1 1 0 10-2 0v6a1 1 0 102 0V8z" clip-rule="evenodd" />
+                </svg>
+              </button>
+            </form>
+          </div>
+        </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% else %}
+<div class="p-6 text-center text-gray-600">Aucun niveau trouvé</div>
+{% endif %}

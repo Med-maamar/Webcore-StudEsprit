@@ -1,0 +1,57 @@
+<div class="fixed inset-0 flex items-center justify-center" aria-modal="true" role="dialog">
+  <!-- Overlay sits under the modal content (lower z-index) so the modal stays interactive -->
+  <div class="absolute inset-0 bg-black opacity-40" style="z-index:1000;"></div>
+  <div class="bg-white rounded-xl p-6 w-full max-w-lg relative" style="z-index:1010;">
+    <h3 class="text-lg font-semibold mb-4">Modifier le cours</h3>
+  <form method="post" enctype="multipart/form-data" hx-post="{% url 'cour_edit' cid %}" hx-target="#cours-panel" hx-swap="outerHTML">
+      {% csrf_token %}
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium">Nom</label>
+          {{ form.nom }}
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Matière</label>
+          <select name="matiere_id" class="px-3 py-2 rounded-xl border border-gray-300 w-full">
+            <option value="">-- Choisir une matière --</option>
+            {% for m in matieres %}
+            <option value="{{ m.id }}" {% if m.id == form.initial.matiere_id %}selected{% endif %}>{{ m.nom }} ({{ m.id }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Coefficient</label>
+          {{ form.coefficient }}
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Description</label>
+          {{ form.description }}
+        </div>
+        <div>
+          <label class="block text-sm font-medium">PDF du cours (optionnel)</label>
+          <input type="file" name="courpdf" accept="application/pdf" class="w-full" />
+          {% if form.initial and form.initial.courpdf %}
+            <p class="text-sm mt-2">Fichier actuel : <a href="{{ form.initial.courpdf }}" target="_blank" class="text-esprit-red underline">Voir le PDF</a></p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <!-- Close modal immediately without making an HTMX request -->
+        <button type="button" class="px-4 py-2 border rounded" onclick="document.getElementById('cours-modal').innerHTML = ''">Annuler</button>
+        <button type="submit" class="px-4 py-2 bg-esprit-red text-white rounded">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  document.body.addEventListener('htmx:afterSwap', function(evt){
+    try {
+      var detail = evt.detail || {};
+      var target = detail.target || detail.elt || null;
+      if (target && target.id === 'cours-panel') {
+        var modal = document.getElementById('cours-modal');
+        if(modal) modal.innerHTML = '';
+      }
+    } catch (e) { }
+  });
+</script>

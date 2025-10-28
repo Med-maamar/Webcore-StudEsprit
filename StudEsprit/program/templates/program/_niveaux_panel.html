@@ -1,0 +1,23 @@
+<div id="niveaux-panel" class="space-y-6" role="region" aria-labelledby="niveaux-heading">
+  <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+    <div>
+      <h2 id="niveaux-heading" class="text-xl font-semibold">Niveaux</h2>
+      <p class="text-sm text-gray-500">Liste des niveaux disponibles. Utilisez la recherche pour filtrer les résultats.</p>
+    </div>
+
+  </div>
+
+  {% if created %}
+  <div role="status" class="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800">
+    Le niveau a été créé avec succès.
+  </div>
+  {% endif %}
+
+  <div class="bg-white rounded-2xl shadow border border-gray-200 overflow-hidden">
+    {% include 'program/_niveaux_table.html' %}
+  </div>
+
+  <!-- Modal container for edit forms -->
+  <div id="niveaux-modal" aria-live="polite"></div>
+
+</div>

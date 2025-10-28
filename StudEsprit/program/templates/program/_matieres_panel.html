@@ -1,0 +1,20 @@
+<div id="matieres-panel" class="space-y-6" role="region" aria-labelledby="matieres-heading">
+  <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+    <div>
+      <h2 id="matieres-heading" class="text-xl font-semibold">Matières</h2>
+      <p class="text-sm text-gray-500">Liste des matières. Filtrez par niveau si besoin.</p>
+    </div>
+ 
+  </div>
+
+  {% if created %}
+  <div role="status" class="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800">La matière a été créée avec succès.</div>
+  {% endif %}
+
+  <div class="bg-white rounded-2xl shadow border border-gray-200 overflow-hidden">
+    {% include 'program/_matieres_table.html' %}
+  </div>
+
+  <!-- Modal container for edit forms -->
+  <div id="matieres-modal" aria-live="polite"></div>
+</div>
