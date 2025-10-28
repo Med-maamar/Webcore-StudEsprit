@@ -27,6 +27,9 @@ from google.oauth2 import id_token
 from google.auth.transport import requests as grequests
 from slugify import slugify
 from pathlib import Path
+from careers.models import CVProfile, Project
+from careers.services.ai_career import extract_skills
+import fitz  # PyMuPDF
 
 ph = PasswordHasher()
 
@@ -111,7 +114,30 @@ def logout_post(request: HttpRequest):
 @login_required_mongo
 def profile_get(request: HttpRequest):
     user = find_user_by_id(request.user.id)
-    return render(request, "account/profile.html", {"user": user})
+    # Prepare or create the CVProfile associated with this user
+    profile = CVProfile.objects(user_id=str(request.user.id)).first()
+    if not profile:
+        profile = CVProfile(user_id=str(request.user.id))
+        profile.save()
+
+    # Build form_values compatible with careers partial
+    projects_lines = []
+    for prj in profile.projects:
+        tech = ",".join(prj.tech)
+        projects_lines.append(" | ".join(filter(None, [prj.title, prj.description, prj.link, tech])))
+    links_lines = [f"{lnk.label} | {lnk.url}" for lnk in profile.links]
+    form_values = {
+        "skills": ", ".join(profile.skills),
+        "languages": ", ".join(profile.languages),
+        "projects": "\n".join(projects_lines),
+        "links": "\n".join(links_lines),
+    }
+
+    return render(
+        request,
+        "account/profile.html",
+        {"user": user, "profile": profile, "form_values": form_values, "errors": {}, "success": False},
+    )
 
 
 @csrf_protect
@@ -259,4 +285,107 @@ def profile_upload_avatar_post(request: HttpRequest):
         messages.success(request, "Avatar updated")
     except Exception as e:
         messages.error(request, str(e))
+    return redirect("/account/profile")
+
+
+@csrf_protect
+@login_required_mongo
+def profile_upload_cv_post(request: HttpRequest):
+    f = request.FILES.get("cv_file")
+    if not f:
+        messages.error(request, "Aucun fichier téléchargé")
+        return redirect("/account/profile")
+    if getattr(f, "content_type", "") not in {"application/pdf"}:
+        messages.error(request, "Type de fichier non supporté (PDF uniquement)")
+        return redirect("/account/profile")
+    if f.size and f.size > 10 * 1024 * 1024:
+        messages.error(request, "Fichier trop volumineux (max 10MB)")
+        return redirect("/account/profile")
+
+    # Persist file under MEDIA/cv/<user_id>/ and remember its URL on the profile
+    filename = slugify(Path(f.name).stem) + ".pdf"
+    user_dir = Path(settings.MEDIA_ROOT) / "cv" / request.user.id
+    user_dir.mkdir(parents=True, exist_ok=True)
+    dst = user_dir / filename
+    with dst.open("wb") as out:
+        for chunk in f.chunks():
+            out.write(chunk)
+    cv_url = f"{settings.MEDIA_URL}cv/{request.user.id}/{filename}"
+
+    # Extract text with PyMuPDF and update CVProfile
+    try:
+        doc = fitz.open(dst)
+        text_parts = [page.get_text() for page in doc]
+        doc.close()
+        text = "\n".join(text_parts)
+
+        # Basic extraction
+        skills = sorted(list(extract_skills(text)))
+        languages_map = {
+            "english": "Anglais",
+            "anglais": "Anglais",
+            "french": "Français",
+            "français": "Français",
+            "francais": "Français",
+            "arabic": "Arabe",
+            "arabe": "Arabe",
+            "german": "Allemand",
+            "allemand": "Allemand",
+            "spanish": "Espagnol",
+            "espagnol": "Espagnol",
+        }
+        langs = []
+        lower = text.lower()
+        for key, label in languages_map.items():
+            if key in lower and label not in langs:
+                langs.append(label)
+
+        # Projects heuristic: bullet lines
+        projects = []
+        for line in text.splitlines():
+            s = line.strip()
+            if len(s) < 6:
+                continue
+            if s.startswith(('-', '*')) or (s[:1].isdigit() and '.' in s[:3]):
+                projects.append({"title": s[:80], "description": s})
+            if len(projects) >= 6:
+                break
+
+        prof = CVProfile.objects(user_id=str(request.user.id)).first() or CVProfile(user_id=str(request.user.id))
+        # Save CV URL
+        prof.cv_url = cv_url
+        if skills:
+            prof.skills = list({*prof.skills, *skills})
+        if langs:
+            prof.languages = list({*prof.languages, *langs})
+        if not prof.projects and projects:
+            prof.projects = [Project(title=p["title"], description=p["description"]) for p in projects[:4]]
+        prof.save()
+        messages.success(request, "CV importé et profil carrière mis à jour")
+    except Exception as e:
+        messages.error(request, f"Échec de lecture du CV: {e}")
+
+    return redirect("/account/profile")
+
+
+@csrf_protect
+@login_required_mongo
+def profile_delete_cv_post(request: HttpRequest):
+    from pathlib import Path as _Path
+    prof = CVProfile.objects(user_id=str(request.user.id)).first()
+    if not prof or not prof.cv_url:
+        messages.error(request, "Aucun CV à supprimer")
+        return redirect("/account/profile")
+    # attempt file delete
+    try:
+        # Convert URL to path under MEDIA_ROOT
+        rel = prof.cv_url.replace(str(settings.MEDIA_URL), "").lstrip("/")
+        fp = _Path(settings.MEDIA_ROOT) / rel
+        if fp.exists():
+            fp.unlink()
+    except Exception:
+        pass
+    prof.cv_url = None
+    prof.save()
+    messages.success(request, "CV supprimé")
     return redirect("/account/profile")

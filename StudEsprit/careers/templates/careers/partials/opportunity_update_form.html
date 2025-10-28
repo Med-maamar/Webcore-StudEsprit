@@ -1,0 +1,59 @@
+<form
+  hx-post="{% url 'careers:opportunity-edit' pk %}"
+  hx-target="#opportunity-admin-modal-content"
+  hx-swap="innerHTML"
+  class="space-y-4"
+>
+  {% csrf_token %}
+  {% if errors %}
+    <div class="p-2 rounded bg-red-50 text-red-700 border border-red-200 text-sm">
+      Veuillez corriger les champs en rouge.
+    </div>
+  {% endif %}
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-medium text-gray-600">Entreprise</label>
+      <input type="text" name="company" value="{{ initial.company }}" class="mt-1 w-full border rounded px-3 py-2">
+      {% if errors.company %}<p class="text-sm text-red-600 mt-1">{{ errors.company|join:', ' }}</p>{% endif %}
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-600">Rôle</label>
+      <input type="text" name="role" value="{{ initial.role }}" class="mt-1 w-full border rounded px-3 py-2">
+      {% if errors.role %}<p class="text-sm text-red-600 mt-1">{{ errors.role|join:', ' }}</p>{% endif %}
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-600">Lieu</label>
+      <input type="text" name="location" value="{{ initial.location }}" class="mt-1 w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-600">Compétences (séparées par des virgules)</label>
+      <input type="text" name="skills" value="{{ initial.skills }}" class="mt-1 w-full border rounded px-3 py-2">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-600">Lien de candidature</label>
+      <input type="url" name="apply_url" value="{{ initial.apply_url }}" class="mt-1 w-full border rounded px-3 py-2">
+      {% if errors.apply_url %}<p class="text-sm text-red-600 mt-1">{{ errors.apply_url|join:', ' }}</p>{% endif %}
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-600">Date limite</label>
+      <input type="datetime-local" name="deadline" value="{{ initial.deadline }}" class="mt-1 w-full border rounded px-3 py-2">
+      {% if errors.deadline %}<p class="text-sm text-red-600 mt-1">{{ errors.deadline|join:', ' }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-600">Description</label>
+    <textarea name="description" rows="5" class="mt-1 w-full border rounded px-3 py-2">{{ initial.description }}</textarea>
+  </div>
+
+  <label class="inline-flex items-center gap-2">
+    <input type="checkbox" name="is_active" {% if initial.is_active %}checked{% endif %}>
+    <span>Active</span>
+  </label>
+
+  <div class="flex justify-end gap-2">
+    <button type="button" class="px-4 py-2 border rounded text-gray-600" onclick="document.getElementById('opportunity-admin-modal').classList.add('hidden')">Annuler</button>
+    <button type="submit" class="px-4 py-2 bg-esprit-red text-white rounded hover:bg-[#a00d26]">Mettre à jour</button>
+  </div>
+</form>

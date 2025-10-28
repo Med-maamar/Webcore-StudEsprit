@@ -38,7 +38,7 @@
         </div>
         <div class="flex items-center gap-3 text-white/80">
           <a href="/" class="hover:text-white">À propos</a>
-          <a href="/services/" class="hover:text-white">Vie étudiante</a>
+          <a href="/careers/opportunities/" class="hover:text-white">Carrière</a>
           <a href="/events/" class="hover:text-white">Agenda</a>
         </div>
       </div>
@@ -59,7 +59,25 @@
         <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
           <a href="/" class="hover:text-esprit-red">Accueil</a>
           <a href="/courses/" class="hover:text-esprit-red">Programmes</a>
-          <a href="/services/" class="hover:text-esprit-red">Services</a>
+          <div class="relative">
+            <button id="careersDropdownButton" data-dropdown-toggle="careersDropdown" data-dropdown-placement="bottom" class="inline-flex items-center gap-1 hover:text-esprit-red" type="button">
+              Carrières
+              <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div id="careersDropdown" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-xl shadow border border-gray-200 w-56">
+              <ul class="py-2 text-sm text-gray-700" aria-labelledby="careersDropdownButton">
+                <li><a href="/careers/opportunities/" class="block px-4 py-2 hover:bg-esprit-red/10">Opportunités</a></li>
+                {% if current_user and current_user.is_authenticated and current_user.role|lower != 'admin' %}
+                <li><a href="/careers/applications/" class="block px-4 py-2 hover:bg-esprit-red/10">Mes candidatures</a></li>
+                {% endif %}
+                {% if current_user and current_user.is_authenticated and current_user.role|lower == 'admin' %}
+                <li><a href="/careers/opportunities/create/" class="block px-4 py-2 hover:bg-esprit-red/10">Créer une opportunité</a></li>
+                {% endif %}
+              </ul>
+            </div>
+          </div>
           <a href="/events/" class="hover:text-esprit-red">Actualités</a>
           <a href="/library/" class="hover:text-esprit-red">Bibliothèque</a>
         </nav>
@@ -109,7 +127,7 @@
         <p>&copy; {% now "Y" %} StudEsprit. Tous droits réservés.</p>
         <div class="flex gap-4">
           <a href="/events/" class="hover:text-esprit-red">Agenda</a>
-          <a href="/services/" class="hover:text-esprit-red">Vie étudiante</a>
+          <a href="/careers/opportunities/" class="hover:text-esprit-red">Carrière</a>
           <a href="/contact/" class="hover:text-esprit-red">Contact</a>
         </div>
       </div>

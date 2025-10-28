@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import logging.config
+from mongoengine import connect
 
 
 # Load environment variables from .env if present
@@ -11,9 +12,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
 DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"}
-CSRF_TRUSTED_ORIGINS = [
-    'https://webcore-studesprit.onrender.com',
-]
+# For local development, avoid hardcoding HTTPS origins to prevent HTTPS-only behavior.
+# Uncomment the production origin below when deploying.
+# CSRF_TRUSTED_ORIGINS = ['https://webcore-studesprit.onrender.com']
+CSRF_TRUSTED_ORIGINS = [] if DEBUG else ['https://webcore-studesprit.onrender.com']
 ALLOWED_HOSTS = ['webcore-studesprit.onrender.com', 'localhost', '127.0.0.1']
 
 APP_VERSION = "0.1.0"
@@ -25,18 +27,23 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework_mongoengine",
+    "django_htmx",
     # Local apps
     "core",
     "accounts",
     "dashboard",
     "ai",
     "library",
-  "evenement",
+    "evenement",
+    "careers",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django_htmx.middleware.HtmxMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -69,8 +76,7 @@ WSGI_APPLICATION = "main.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.dummy",
     }
 }
 
@@ -120,9 +126,17 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
-# MongoDB env
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "studesprit")
+# MongoDB env / mongoengine connection
+MONGODB_URI = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
+MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME") or os.getenv("MONGO_DB_NAME") or "studhub"
+if not MONGODB_URI:
+    MONGODB_URI = f"mongodb://localhost:27017/{MONGODB_DB_NAME}"
+
+connect(alias="default", host=MONGODB_URI, db=MONGODB_DB_NAME)
+
+# Backwards compatibility for modules using legacy names
+MONGO_URI = MONGODB_URI
+MONGO_DB_NAME = MONGODB_DB_NAME
 
 # Google OAuth2
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
@@ -143,3 +157,20 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
 }
 logging.config.dictConfig(LOGGING)
+
+
+# REST framework defaults
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.BasicAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
+}
+
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/"

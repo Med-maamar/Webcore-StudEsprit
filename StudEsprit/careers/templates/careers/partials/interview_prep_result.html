@@ -1,0 +1,51 @@
+{% if result %}
+  <div class="space-y-4">
+    <div class="flex items-center justify-between">
+      <h4 class="font-semibold">Questions & points attendus</h4>
+      <button type="button" class="px-3 py-1 rounded-full border border-gray-300 text-sm hover:bg-gray-50" onclick="(function(btn){var c=document.getElementById('qa-container');if(!c)return; c.classList.toggle('compact'); btn.textContent=c.classList.contains('compact')?'Agrandir':'Réduire';})(this)">Réduire</button>
+    </div>
+    <div id="qa-container" class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-stretch items-stretch">
+      {% for qa in result.qa %}
+        <div class="border rounded-xl p-4 bg-white shadow-sm h-full">
+          <p class="font-medium leading-snug mb-2">{{ qa.question }}</p>
+          {% if qa.idealPoints %}
+            <ul class="list-disc list-inside text-sm text-gray-700 mt-1 details">
+              {% for p in qa.idealPoints %}
+                <li>{{ p }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    <style>
+      #qa-container.compact .details{display:none}
+      #qa-container .details li{margin-left:0.25rem}
+    </style>
+    {% if result.rubric %}
+      <div>
+        <h4 class="font-semibold">Rubric</h4>
+        <ul class="mt-2 max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {% for r in result.rubric %}
+            <li class="border rounded-xl p-4 bg-white shadow-sm">
+              <p class="font-medium">{{ r.topic }}</p>
+              <p class="text-sm text-gray-700">{{ r.whatGoodLooksLike }}</p>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    {% if app_id %}
+      <form
+        hx-post="{% url 'careers:application-interview-prep-delete' app_id %}"
+        hx-target="closest .space-y-4"
+        hx-swap="outerHTML"
+      >
+        {% csrf_token %}
+        <button type="submit" class="px-3 py-2 rounded-full border border-gray-300 hover:bg-gray-50 text-sm">Supprimer ces questions</button>
+      </form>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="text-gray-600">Aucun résultat.</div>
+{% endif %}

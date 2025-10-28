@@ -36,6 +36,32 @@
     </form>
   </div>
 
+  <!-- Profil Carrière -->
+  <div class="bg-white rounded-3xl border border-gray-200 shadow p-6">
+    <h2 class="text-2xl font-semibold text-esprit-red mb-6">Profil Carrière</h2>
+    <div id="profile-form-wrapper">
+      {% include 'careers/partials/profile_form.html' %}
+    </div>
+    <div class="mt-6">
+      <h3 class="text-lg font-semibold mb-2">Téléverser un CV (PDF)</h3>
+      <form method="post" action="/account/profile/upload-cv" enctype="multipart/form-data" class="flex items-center gap-3">
+        {% csrf_token %}
+        <input type="file" name="cv_file" accept="application/pdf" class="block w-full text-sm" />
+        <button class="px-4 py-2 rounded-full bg-esprit-red text-white font-semibold hover:bg-[#a00d26]">Téléverser & Analyser</button>
+      </form>
+      <p class="text-xs text-gray-500 mt-1">Votre CV sera stocké et lu (texte) pour enrichir compétences, langues, projets.</p>
+      {% if profile.cv_url %}
+      <div class="mt-3 flex items-center gap-3">
+        <a href="{{ profile.cv_url }}" target="_blank" class="text-esprit-red underline">Voir le CV actuel</a>
+        <form method="post" action="/account/profile/delete-cv">
+          {% csrf_token %}
+          <button class="px-3 py-1 rounded-full border border-gray-300 hover:bg-gray-50" type="submit">Supprimer</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
   <div class="bg-white rounded-3xl border border-gray-200 shadow p-6">
     <h2 class="text-2xl font-semibold text-esprit-red mb-6">Changer de mot de passe</h2>
     <form method="post" action="/account/change-password" class="space-y-4">

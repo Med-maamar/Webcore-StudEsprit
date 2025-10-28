@@ -1,0 +1,70 @@
+<form
+  hx-post="{% url 'careers:profile' %}"
+  hx-target="#profile-form-wrapper"
+  hx-swap="outerHTML"
+  class="space-y-4"
+>
+  {% csrf_token %}
+  {% if success %}
+    <div class="p-3 rounded bg-green-50 text-green-700 border border-green-200">Profile updated successfully.</div>
+  {% endif %}
+  {% if errors %}
+    <div class="p-3 rounded bg-red-50 text-red-700 border border-red-200">
+      <p class="font-semibold">Please fix the highlighted fields.</p>
+    </div>
+  {% endif %}
+
+  <div>
+    <label class="block text-sm font-medium text-gray-600">Skills (comma separated)</label>
+    <input
+      type="text"
+      name="skills"
+      value="{{ form_values.skills }}"
+      class="mt-1 w-full border rounded px-3 py-2"
+    />
+    {% if errors.skills %}
+      <p class="text-sm text-red-600 mt-1">{{ errors.skills|join:', ' }}</p>
+    {% endif %}
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-600">Languages (comma separated)</label>
+    <input
+      type="text"
+      name="languages"
+      value="{{ form_values.languages }}"
+      class="mt-1 w-full border rounded px-3 py-2"
+    />
+    {% if errors.languages %}
+      <p class="text-sm text-red-600 mt-1">{{ errors.languages|join:', ' }}</p>
+    {% endif %}
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-600">Projects (one per line: title | description | link | tech1,tech2)</label>
+    <textarea
+      name="projects"
+      rows="4"
+      class="mt-1 w-full border rounded px-3 py-2"
+    >{{ form_values.projects }}</textarea>
+    {% if errors.projects %}
+      <p class="text-sm text-red-600 mt-1">{{ errors.projects|join:', ' }}</p>
+    {% endif %}
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-600">Links (one per line: label | https://example)</label>
+    <textarea
+      name="links"
+      rows="3"
+      class="mt-1 w-full border rounded px-3 py-2"
+    >{{ form_values.links }}</textarea>
+    {% if errors.links %}
+      <p class="text-sm text-red-600 mt-1">{{ errors.links|join:', ' }}</p>
+    {% endif %}
+  </div>
+
+  <div class="flex justify-end gap-2">
+    <button type="submit" class="px-4 py-2 bg-esprit-red text-white rounded-full hover:bg-[#a00d26]">Enregistrer</button>
+  </div>
+</form>

@@ -19,5 +19,7 @@ account_urlpatterns = [
     path("profile", views.profile_get, name="profile_get"),
     path("profile/update", views.profile_post, name="profile_post"),
     path("profile/upload-avatar", views.profile_upload_avatar_post, name="profile_upload_avatar_post"),
+    path("profile/upload-cv", views.profile_upload_cv_post, name="profile_upload_cv_post"),
+    path("profile/delete-cv", views.profile_delete_cv_post, name="profile_delete_cv_post"),
     path("change-password", views.change_password_post, name="change_password_post"),
 ]

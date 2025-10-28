@@ -22,7 +22,7 @@ pip install -r requirements.txt
 
 # 3) Environment
 cp .env.example .env
-# edit .env as needed (MONGO_URI, MONGO_DB_NAME, SECRET_KEY, DEBUG)
+# edit .env as needed (MONGODB_URI, MONGODB_DB_NAME, SECRET_KEY, DEBUG, OPENAI_API_KEY)
 
 # 4) Node + Tailwind
 npm init -y
@@ -51,7 +51,7 @@ pip install -r requirements.txt
 
 # 4) Environment
 copy .env.example .env
-# Edit .env as needed (MONGO_URI, MONGO_DB_NAME, SECRET_KEY, DEBUG)
+# Edit .env as needed (MONGODB_URI, MONGODB_DB_NAME, SECRET_KEY, DEBUG, OPENAI_API_KEY)
 
 # 5) Node + Tailwind (requires Node.js installed)
 npm install
@@ -71,12 +71,14 @@ Windows notes:
 
 ## Environment
 
-- `MONGO_URI` e.g., `mongodb://localhost:27017`
-- `MONGO_DB_NAME` e.g., `studesprit`
+- `MONGODB_URI` e.g., `mongodb://localhost:27017/studhub`
+- `MONGODB_DB_NAME` e.g., `studhub`
+- `MONGO_URI` / `MONGO_DB_NAME` are still read if present (for legacy modules)
 - `SECRET_KEY` set a strong value for production
 - `DEBUG` true/false
 - `ALLOWED_HOSTS` comma-separated
 - Google OAuth2 (optional, for Google Login)
+- `OPENAI_API_KEY` (optional, enables LLM mode for the careers AI helpers)
  
 ## Mongo + Vector Search
 
@@ -98,6 +100,28 @@ Windows notes:
 - Users table: `/dashboard/users` (with HTMX partial at `/dashboard/users/partial`)
 - Inline role update (Admin only): POST `/dashboard/users/update-role`
 - Stubs: `/courses/`, `/services/`, `/events/`, `/shop/`
+- Careers API: `/api/opportunities/`, `/api/applications/`, `/api/profile/`, `/api/ai/*`
+- Careers pages: `/careers/opportunities/`, `/careers/opportunities/<id>/`, `/careers/profile/`
+
+## Careers Module
+
+- MongoEngine documents for opportunities, applications, and CV profiles (no SQL tables)
+- REST API via Django REST Framework + `rest_framework_mongoengine`
+- Permissions: students manage their own applications/profile; staff manage all opportunities
+- AI helpers (rules-based by default, optional OpenAI LLM when `OPENAI_API_KEY` is set)
+- HTMX-powered pages for browsing/applying to opportunities and editing the CV profile
+- Seed demo data: `python manage.py seed_careers`
+
+Sample calls (with an authenticated session or token):
+
+```
+curl -X GET http://127.0.0.1:8000/api/opportunities/ -b sessionid=...
+
+curl -X POST http://127.0.0.1:8000/api/ai/cv-gap-analysis/ \
+  -H "Content-Type: application/json" \
+  -d '{"jobDesc": "We need Python/Django + MongoDB"}' \
+  -b sessionid=...
+```
 
 ## Notes
 

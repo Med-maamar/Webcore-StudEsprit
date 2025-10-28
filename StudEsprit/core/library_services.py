@@ -27,7 +27,12 @@ except ImportError:
 try:
     from sentence_transformers import SentenceTransformer
     SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
+except Exception as e:
+    # Catch broad exceptions to avoid crashes due to binary incompatibilities
+    # (e.g., NumPy 2.x with older compiled extensions via torch)
+    logging.getLogger(__name__).warning(
+        "sentence-transformers unavailable, falling back. Reason: %s", str(e)
+    )
     SENTENCE_TRANSFORMERS_AVAILABLE = False
 
 try:

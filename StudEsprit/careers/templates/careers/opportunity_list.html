@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto py-8 px-4">
+  <div class="bg-white rounded-2xl shadow border border-gray-200 p-6 mb-6">
+    <h1 class="text-3xl font-semibold mb-4">Carrières</h1>
+    <form
+      hx-get="{% url 'careers:opportunity-list' %}"
+      hx-target="#opportunity-results"
+      hx-swap="outerHTML"
+      class="grid gap-4 md:grid-cols-4"
+    >
+    <div class="md:col-span-1">
+      <label class="block text-sm font-medium text-gray-600">Lieu</label>
+      <input
+        type="text"
+        name="location"
+        value="{{ filters.location }}"
+        class="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+        placeholder="Remote, Paris..."
+      />
+    </div>
+    <div class="md:col-span-2">
+      <label class="block text-sm font-medium text-gray-600">Compétences (séparées par des virgules)</label>
+      <input
+        type="text"
+        name="skills"
+        value="{{ filters.skills }}"
+        class="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+        placeholder="python, django, mongodb"
+      />
+    </div>
+    <div class="md:col-span-1">
+      <label class="block text-sm font-medium text-gray-600">Mot-clé</label>
+      <input
+        type="text"
+        name="search"
+        value="{{ filters.search }}"
+        class="mt-1 w-full rounded border border-gray-300 px-2 py-1"
+        placeholder="Entreprise ou rôle"
+      />
+    </div>
+    <div class="md:col-span-4 flex justify-end gap-2">
+      <button
+        type="submit"
+        class="bg-esprit-red text-white px-4 py-2 rounded-full hover:bg-[#a00d26]"
+      >
+        Appliquer
+      </button>
+      <a
+        href="{% url 'careers:opportunity-list' %}"
+        class="px-4 py-2 border rounded-full text-gray-700 hover:bg-gray-50"
+      >
+        Réinitialiser
+      </a>
+    </div>
+    </form>
+  </div>
+
+  {% include "careers/partials/opportunity_items.html" %}
+
+  {% if current_user and current_user.is_authenticated and current_user.role|lower == 'admin' %}
+    <div class="mt-10">
+      <h2 class="text-xl font-semibold mb-3">Administration</h2>
+      <button
+        type="button"
+        hx-get="{% url 'careers:opportunity-create' %}"
+        hx-target="#opportunity-admin-modal-content"
+        hx-swap="innerHTML"
+        class="px-4 py-2 rounded bg-esprit-red text-white hover:bg-[#a00d26]"
+      >
+        Nouvelle opportunité
+      </button>
+    </div>
+    <div id="opportunity-admin-modal" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+        <div class="flex justify-between items-center px-4 py-2 border-b">
+          <h3 class="font-semibold">Créer une opportunité</h3>
+          <button
+            type="button"
+            class="text-gray-500 hover:text-gray-700"
+            onclick="document.getElementById('opportunity-admin-modal').classList.add('hidden')"
+          >
+            ✕
+          </button>
+        </div>
+        <div id="opportunity-admin-modal-content" class="p-4"></div>
+      </div>
+    </div>
+  {% endif %}
+
+  <script>
+    document.addEventListener('htmx:afterSwap', function (event) {
+      if (event.detail.target && event.detail.target.id === 'opportunity-admin-modal-content') {
+        document.getElementById('opportunity-admin-modal').classList.remove('hidden');
+      }
+    });
+    document.addEventListener('click', function (event) {
+      const modal = document.getElementById('opportunity-admin-modal');
+      if (modal && !modal.classList.contains('hidden') && event.target === modal) {
+        modal.classList.add('hidden');
+      }
+    });
+  </script>
+</div>
+{% endblock %}

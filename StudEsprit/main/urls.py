@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from core.views import coming_soon, home
+from django.views.generic import RedirectView
 from accounts.urls import account_urlpatterns
 
 
@@ -14,9 +15,11 @@ urlpatterns = [
     path("account/", include((account_urlpatterns, "accounts"), namespace="account")),
     path("dashboard/", include("dashboard.urls")),
     path("library/", include("library.urls")),
-    # Stubs (coming soon pages)
+    path("", include("careers.urls")),
+    # Careers entrypoint under historic Services URL
+    path("services/", RedirectView.as_view(pattern_name="careers:opportunity-list", permanent=False), name="services"),
+    # Other stubs (coming soon pages)
     path("courses/", coming_soon, name="courses"),
-    path("services/", coming_soon, name="services"),
     path("events/", include("evenement.urls")),
     path("shop/", coming_soon, name="shop"),
 ]

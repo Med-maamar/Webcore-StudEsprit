@@ -1,0 +1,84 @@
+<form
+  hx-post="{% url 'careers:opportunity-apply' opportunity.id %}"
+  hx-target="#apply-modal-content"
+  hx-swap="innerHTML"
+  class="space-y-4"
+>
+  {% csrf_token %}
+  {% if errors %}
+    <div class="p-2 rounded bg-red-50 text-red-700 border border-red-200 text-sm">
+      Please correct the highlighted fields.
+    </div>
+  {% endif %}
+
+  <div>
+    <label class="block text-sm font-medium text-gray-600">Statut</label>
+    <select name="status" class="mt-1 w-full border rounded px-3 py-2">
+      <option value="draft" {% if initial.status == 'draft' %}selected{% endif %}>Brouillon</option>
+      <option value="submitted" {% if initial.status == 'submitted' %}selected{% endif %}>Soumise</option>
+      <option value="interview" {% if initial.status == 'interview' %}selected{% endif %}>Entretien</option>
+      <option value="offered" {% if initial.status == 'offered' %}selected{% endif %}>Offre</option>
+      <option value="rejected" {% if initial.status == 'rejected' %}selected{% endif %}>Refusée</option>
+    </select>
+    {% if errors.status %}
+      <p class="text-sm text-red-600 mt-1">{{ errors.status|join:', ' }}</p>
+    {% endif %}
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-600">Mon CV</label>
+    {% if cv_url %}
+      <select name="cv_url" class="mt-1 w-full border rounded px-3 py-2">
+        <option value="{{ cv_url }}" selected>CV enregistré</option>
+      </select>
+      <p class="text-xs text-gray-500 mt-1"><a href="{{ cv_url }}" target="_blank" class="text-esprit-red underline">Voir le CV</a> — modifiez dans votre <a href="/account/profile" class="text-esprit-red underline">Profil</a>.</p>
+    {% else %}
+      <p class="text-sm text-gray-600">Aucun CV enregistré. <a href="/account/profile" class="text-esprit-red underline">Téléverser depuis le profil</a>.</p>
+    {% endif %}
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-600">Lettre de motivation</label>
+    {% if saved_covers and saved_covers|length > 0 %}
+      <select id="cover_select" class="mt-1 w-full border rounded px-3 py-2">
+        <option value="">— Sélectionner —</option>
+        {% for cl in saved_covers %}
+          <option value="{{ cl.id }}" data-content="{{ cl.content|escape }}">{{ cl.title }}</option>
+        {% endfor %}
+      </select>
+      <textarea id="cover_preview" name="cover_text" rows="6" class="mt-2 w-full border rounded px-3 py-2" placeholder="Texte de la lettre (modifiable)"></textarea>
+      <script>
+        (function(){
+          var sel = document.getElementById('cover_select');
+          if(sel){ sel.addEventListener('change', function(){
+            var opt = sel.options[sel.selectedIndex];
+            var content = opt ? opt.getAttribute('data-content') : '';
+            document.getElementById('cover_preview').value = content || '';
+          });}
+        })();
+      </script>
+    {% else %}
+      <p class="text-sm text-gray-600">Aucune lettre enregistrée. Vous pouvez en générer depuis une opportunité ou en coller le texte ci‑dessous.</p>
+      <textarea name="cover_text" rows="6" class="mt-2 w-full border rounded px-3 py-2" placeholder="Texte de la lettre (optionnel)"></textarea>
+    {% endif %}
+  </div>
+
+  <div>
+    <label class="block text-sm font-medium text-gray-600">Notes</label>
+    <textarea name="notes" rows="3" class="mt-1 w-full border rounded px-3 py-2">{{ initial.notes }}</textarea>
+    {% if errors.notes %}
+      <p class="text-sm text-red-600 mt-1">{{ errors.notes|join:', ' }}</p>
+    {% endif %}
+  </div>
+
+  <div class="flex justify-end gap-2">
+    <button
+      type="button"
+      class="px-4 py-2 border rounded-full text-gray-600"
+      onclick="document.getElementById('apply-modal').classList.add('hidden')"
+    >
+      Annuler
+    </button>
+    <button type="submit" class="px-4 py-2 bg-esprit-red text-white rounded-full hover:bg-[#a00d26]">Soumettre la candidature</button>
+  </div>
+</form>
