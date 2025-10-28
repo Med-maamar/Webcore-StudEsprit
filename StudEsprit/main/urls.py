@@ -22,6 +22,8 @@ urlpatterns = [
     path("courses/", coming_soon, name="courses"),
     path("events/", include("evenement.urls")),
     path("shop/", coming_soon, name="shop"),
+        # Program app (niveaux management)
+    path("program/", include("program.urls")),
 ]
 
 # Serve static assets explicitly in DEBUG (helps when runserver static handler is bypassed)

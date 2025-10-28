@@ -15,7 +15,31 @@
     </a>
   {% endif %}
   <div class="pt-4 pb-2 text-xs uppercase tracking-wide text-gray-500">Explorer</div>
-  <a href="/courses/" class="block px-3 py-2 rounded-xl hover:bg-esprit-red/10">Programmes</a>
+   <!-- Programmes Dropdown -->
+  <div x-data="{ open: false }" class="space-y-1">
+    <button 
+      @click="open = !open" 
+      class="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-esprit-red/10 focus:outline-none"
+    >
+      <span class="font-medium">Programmes</span>
+      <svg :class="{ 'rotate-180': open }" class="w-4 h-4 text-gray-500 transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+
+    <ul x-show="open" x-transition class="pl-6 space-y-1">
+      <li>
+        <a href="{% url 'niveaux_list' %}" class="block px-3 py-2 rounded-lg text-sm hover:bg-esprit-red/10">Niveaux</a>
+      </li>
+      <li>
+        <a href="{% url 'matieres_list' %}" class="block px-3 py-2 rounded-lg text-sm hover:bg-esprit-red/10">Matières</a>
+      </li>
+      <li>
+        <a href="{% url 'cours_list' %}" class="block px-3 py-2 rounded-lg text-sm hover:bg-esprit-red/10">Cours</a>
+      </li>
+    </ul>
+  </div>
+
   <a href="/careers/opportunities/" class="block px-3 py-2 rounded-xl hover:bg-esprit-red/10">Carrières</a>
   <a href="/events/" class="block px-3 py-2 rounded-xl hover:bg-esprit-red/10">Événements</a>
   <a href="/shop/" class="block px-3 py-2 rounded-xl hover:bg-esprit-red/10">Bibliothèque</a>

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="space-y-6">
+  <div class="flex items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold text-esprit-dark">Gestion des cours</h1>
+      <p class="text-sm text-gray-500">Créer et organiser les cours par matière.</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <form class="flex items-center bg-white rounded-full shadow-sm px-3 py-2 border border-gray-200" hx-get="{% url 'cours_partial' %}" hx-trigger="keyup changed delay:300ms" hx-target="#cours-table" hx-include="this">
+        <svg class="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 100-15 7.5 7.5 0 000 15z"></path></svg>
+        <input type="text" name="q" value="{{ q }}" placeholder="Rechercher..." class="outline-none text-sm mr-3" />
+        <select name="matiere_id" class="px-3 py-1 rounded-full border border-gray-200 bg-white text-sm">
+          <option value="">Toutes les matières</option>
+          {% for m in matieres %}
+          <option value="{{ m.id }}">{{ m.nom }}</option>
+          {% endfor %}
+        </select>
+        <input type="hidden" name="page" value="{{ page }}" />
+        <input type="hidden" name="page_size" value="{{ page_size }}" />
+      </form>
+      <a href="{% url 'cour_create' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-esprit-red text-white rounded-xl shadow hover:opacity-90">Créer un cours</a>
+    </div>
+  </div>
+
+  <div id="cours-panel-container" hx-get="{% url 'cours_panel' %}?q={{ q }}&matiere_id={{ matiere_id }}&page={{ page }}&page_size={{ page_size }}" hx-trigger="load" class="min-h-[200px]"></div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+<div class="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
+  <form method="post" hx-post="{% url 'matiere_create' %}" hx-target="#matieres-panel" hx-swap="outerHTML" novalidate aria-describedby="create-help-matiere">
+    {% csrf_token %}
+    <div class="space-y-4">
+      <div>
+        <label for="id_nom" class="block text-sm font-semibold text-gray-800 mb-1">Nom <span class="text-red-500">*</span></label>
+        <input id="id_nom" name="nom" type="text" value="{{ form.nom.value|default_if_none:'' }}" required class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:border-esprit-red focus:ring-esprit-red" />
+      </div>
+      <div>
+        <label for="id_niveau_id" class="block text-sm font-semibold text-gray-800 mb-1">Niveau</label>
+        <select name="niveau_id" id="id_niveau_id" class="px-3 py-2 rounded-xl border border-gray-300 w-full">
+          <option value="">-- Choisir un niveau --</option>
+          {% for n in niveaux %}
+          <option value="{{ n.id }}">{{ n.nom }}</option>
+          {% endfor %}
+        </select>
+        <p id="selected-niveau" class="mt-2 text-sm text-gray-600">Niveau sélectionné: <span id="selected-niveau-name">Aucun</span></p>
+      </div>
+      <div>
+        <label for="id_description" class="block text-sm font-semibold text-gray-800 mb-1">Description</label>
+        <textarea id="id_description" name="description" rows="3" class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:border-esprit-red focus:ring-esprit-red">{{ form.description.value|default_if_none:'' }}</textarea>
+      </div>
+    </div>
+    <p id="create-help-matiere" class="text-xs text-gray-500 mt-2">Choisissez un niveau pour établir la relation (facultatif).</p>
+    <div class="mt-4 flex gap-3">
+      <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-esprit-red text-white rounded-xl">Créer</button>
+      <button type="reset" class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-xl">Réinitialiser</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  (function(){
+    const sel = document.getElementById('id_niveau_id');
+    const nameSpan = document.getElementById('selected-niveau-name');
+    function updateName(){
+      if(!sel) return;
+      const opt = sel.options[sel.selectedIndex];
+      nameSpan.textContent = opt && opt.value ? opt.text : 'Aucun';
+    }
+    if(sel){
+      sel.addEventListener('change', updateName);
+      // initialize
+      updateName();
+    }
+    // Re-initialize after HTMX swaps
+    document.body.addEventListener('htmx:afterSwap', function(evt){
+      const sel2 = document.getElementById('id_niveau_id');
+      if(sel2){
+        const ns = document.getElementById('selected-niveau-name');
+        sel2.addEventListener('change', function(){ ns.textContent = sel2.options[sel2.selectedIndex].text || 'Aucun'; });
+      }
+    });
+  })();
+</script>

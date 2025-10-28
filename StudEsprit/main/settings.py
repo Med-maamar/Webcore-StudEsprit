@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     # Local apps
     "core",
     "accounts",
+    "program",
     "dashboard",
     "ai",
     "library",

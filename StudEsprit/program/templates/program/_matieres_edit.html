@@ -1,0 +1,44 @@
+<div class="fixed inset-0 flex items-center justify-center" aria-modal="true" role="dialog">
+  <div class="absolute inset-0 bg-black opacity-40" style="z-index:1000;"></div>
+  <div class="bg-white rounded-xl p-6 w-full max-w-lg relative" style="z-index:1010;">
+    <h3 class="text-lg font-semibold mb-4">Modifier la matière</h3>
+    <form method="post" hx-post="{% url 'matiere_edit' mid %}" hx-target="#matieres-panel" hx-swap="outerHTML">
+      {% csrf_token %}
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium">Nom</label>
+          {{ form.nom }}
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Niveau</label>
+          <select name="niveau_id" class="px-3 py-2 rounded-xl border border-gray-300 w-full">
+            <option value="">-- Choisir un niveau --</option>
+            {% for n in niveaux %}
+            <option value="{{ n.id }}" {% if n.id == form.initial.niveau_id %}selected{% endif %}>{{ n.nom }} ({{ n.id }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium">Description</label>
+          {{ form.description }}
+        </div>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" class="px-4 py-2 border rounded" onclick="document.getElementById('matieres-modal').innerHTML = ''">Annuler</button>
+        <button type="submit" class="px-4 py-2 bg-esprit-red text-white rounded">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  document.body.addEventListener('htmx:afterSwap', function(evt){
+    try {
+      var detail = evt.detail || {};
+      var target = detail.target || detail.elt || null;
+      if (target && target.id === 'matieres-panel') {
+        var modal = document.getElementById('matieres-modal');
+        if(modal) modal.innerHTML = '';
+      }
+    } catch (e) { }
+  });
+</script>
