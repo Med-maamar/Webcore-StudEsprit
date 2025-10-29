@@ -83,6 +83,11 @@
                           📌 Épinglé
                         </span>
                       {% endif %}
+                      {% if post.service_offer %}
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300">
+                          🤝 Offre d'aide
+                        </span>
+                      {% endif %}
                       {% if post.is_solved %}
                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300">
                           ✅ Résolu
@@ -102,7 +107,7 @@
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                       </svg>
-                      {{ post.likes_count }} likes
+                      <span id="likes-count-{{ post.id }}">{{ post.likes_count }}</span> likes
                     </span>
                     <span class="flex items-center gap-1">
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,11 +125,17 @@
                     <span>{{ post.created_at|date:"d/m/Y H:i" }}</span>
                   </div>
                   <div class="flex items-center gap-2">
-                    <button onclick="toggleLike('{{ post.id }}')" class="p-2 {% if post.is_liked %}text-red-500{% else %}text-gray-400{% endif %} hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200">
+                    <button id="like-btn-{{ post.id }}" onclick="toggleLike('{{ post.id }}', event)" class="p-2 {% if post.is_liked %}text-red-500{% else %}text-gray-400{% endif %} hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200">
                       <svg class="w-5 h-5 {% if post.is_liked %}fill-current{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                       </svg>
                     </button>
+                    <button id="dislike-btn-{{ post.id }}" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all duration-200 dislike-btn" onclick="toggleDislike('{{ post.id }}', event)" title="Je n'aime pas">
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67 10.94 4.61a5.5 5.5 0 00-7.78 7.78l1.05 1.06L12 21.23l7.79-7.78 1.05-1.06a5.5 5.5 0 000-7.78z"></path>
+                      </svg>
+                    </button>
+                    <span id="dislikes-count-{{ post.id }}" class="text-sm text-gray-500">0</span>
                     <a href="{% url 'library:view_post' post.id %}" class="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:from-purple-600 hover:to-purple-700 transition-all duration-200">
                       Lire
                     </a>
@@ -221,7 +232,7 @@
 </div>
 
 <script>
-function toggleLike(postId) {
+function toggleLike(postId, event) {
   fetch('/library/api/community/like/', {
     method: 'POST',
     headers: {
@@ -238,18 +249,19 @@ function toggleLike(postId) {
       // Update the like button and count
       const button = event.target.closest('button');
       const likeIcon = button.querySelector('svg');
-      const likeCount = button.parentElement.parentElement.querySelector('.flex.items-center.gap-6').querySelector('span');
+      const likeCount = document.getElementById(`likes-count-${postId}`);
+      const likeBtn = document.getElementById(`like-btn-${postId}`);
       
       if (data.liked) {
-        button.classList.add('text-red-500');
-        button.classList.remove('text-gray-400');
+        likeBtn.classList.add('text-red-500');
+        likeBtn.classList.remove('text-gray-400');
         likeIcon.classList.add('fill-current');
-        likeCount.textContent = `${data.count} likes`;
+        if (likeCount) likeCount.textContent = data.count;
       } else {
-        button.classList.remove('text-red-500');
-        button.classList.add('text-gray-400');
+        likeBtn.classList.remove('text-red-500');
+        likeBtn.classList.add('text-gray-400');
         likeIcon.classList.remove('fill-current');
-        likeCount.textContent = `${data.count} likes`;
+        if (likeCount) likeCount.textContent = data.count;
       }
     }
   })
@@ -257,5 +269,49 @@ function toggleLike(postId) {
     console.error('Error:', error);
   });
 }
+
+// Toggle dislike locally (frontend-only persistence via localStorage)
+function toggleDislike(postId, event) {
+  const key = `post_disliked_${postId}`;
+  const disliked = localStorage.getItem(key) === '1';
+  const dislikeCountEl = document.getElementById(`dislikes-count-${postId}`);
+  const dislikeBtn = document.getElementById(`dislike-btn-${postId}`);
+
+  let current = parseInt(dislikeCountEl ? dislikeCountEl.textContent || '0' : '0', 10);
+
+  if (!disliked) {
+    // mark disliked
+    localStorage.setItem(key, '1');
+    current = current + 1;
+    if (dislikeBtn) dislikeBtn.classList.add('text-blue-500');
+  } else {
+    localStorage.removeItem(key);
+    current = Math.max(0, current - 1);
+    if (dislikeBtn) dislikeBtn.classList.remove('text-blue-500');
+  }
+
+  if (dislikeCountEl) dislikeCountEl.textContent = current;
+}
+
+// Initialize dislike buttons based on localStorage
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.dislike-btn').forEach(btn => {
+    const id = btn.id && btn.id.replace('dislike-btn-', '');
+    if (!id) return;
+    const key = `post_disliked_${id}`;
+    const disliked = localStorage.getItem(key) === '1';
+    const dislikeCountEl = document.getElementById(`dislikes-count-${id}`);
+    if (disliked) {
+      btn.classList.add('text-blue-500');
+      if (dislikeCountEl) {
+        let c = parseInt(dislikeCountEl.textContent || '0', 10);
+        // if initial count is 0, show 1 for the current user
+        if (c === 0) c = 1;
+        dislikeCountEl.textContent = c;
+      }
+    }
+  });
+});
 </script>
 {% endblock %}
+

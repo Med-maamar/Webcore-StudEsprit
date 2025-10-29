@@ -217,3 +217,4 @@ Hâte de lire vos réponses ! 😊''',
         self.stdout.write(
             self.style.SUCCESS('You can now visit /library/community/ to see the community in action!')
         )
+

@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{# Custom admin base to apply a different look from the frontend. #}
+
+{% block title %}StudEsprit — Admin Dashboard{% endblock %}
+
+{% block extrahead %}
+  <link rel="stylesheet" href="{% static 'admin/custom_admin.css' %}">
+  {{ block.super }}
+{% endblock %}
+
+{% block branding %}
+  <div class="sa-branding">
+    <a href="/admin/">StudEsprit Admin</a>
+  </div>
+{% endblock %}
+
+{% block nav-global %}
+  {# Replace default nav with compact dark header for admin #}
+  <div class="sa-header">
+    <div class="sa-header-left">
+      <a class="sa-logo" href="/admin/">SE</a>
+      <span class="sa-title">Admin Console</span>
+    </div>
+    <div class="sa-header-right">
+      {% if user.is_authenticated %}
+        <span class="sa-user">{{ user.get_username }}</span>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
