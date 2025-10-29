@@ -64,6 +64,21 @@ def list_niveaux(q: Optional[str] = None, limit: int = 100, skip: int = 0) -> Li
     return docs
 
 
+def count_niveaux(q: Optional[str] = None) -> int:
+    db = get_db()
+    query: Dict[str, Any] = {}
+    if q:
+        query["nom"] = {"$regex": q, "$options": "i"}
+    try:
+        return int(db[COLLECTION_NAME].count_documents(query))
+    except Exception:
+        # fallback for older drivers or errors
+        try:
+            return len(list(db[COLLECTION_NAME].find(query)))
+        except Exception:
+            return 0
+
+
 def update_niveau(niveau_id, data: Dict[str, Any]) -> bool:
     db = get_db()
     try:
@@ -186,6 +201,22 @@ def list_matieres(q: Optional[str] = None, niveau_id=None, limit: int = 100, ski
     return docs
 
 
+def count_matieres(q: Optional[str] = None, niveau_id=None) -> int:
+    db = get_db()
+    query: Dict[str, Any] = {}
+    if q:
+        query["nom"] = {"$regex": q, "$options": "i"}
+    if niveau_id:
+        query["niveau_id"] = niveau_id
+    try:
+        return int(db[MATIERE_COLLECTION].count_documents(query))
+    except Exception:
+        try:
+            return len(list(db[MATIERE_COLLECTION].find(query)))
+        except Exception:
+            return 0
+
+
 def update_matiere(matiere_id, data: Dict[str, Any]) -> bool:
     db = get_db()
     try:
@@ -285,6 +316,22 @@ def list_cours(q: Optional[str] = None, matiere_id=None, limit: int = 100, skip:
     for d in docs:
         d["id"] = str(d.get("_id"))
     return docs
+
+
+def count_cours(q: Optional[str] = None, matiere_id=None) -> int:
+    db = get_db()
+    query: Dict[str, Any] = {}
+    if q:
+        query["nom"] = {"$regex": q, "$options": "i"}
+    if matiere_id:
+        query["matiere_id"] = matiere_id
+    try:
+        return int(db[COURS_COLLECTION].count_documents(query))
+    except Exception:
+        try:
+            return len(list(db[COURS_COLLECTION].find(query)))
+        except Exception:
+            return 0
 
 
 def update_cour(cour_id, data: Dict[str, Any]) -> bool:

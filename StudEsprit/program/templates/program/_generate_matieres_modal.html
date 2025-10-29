@@ -1,0 +1,202 @@
+<!-- Modal to generate candidate matieres for a selected niveau and add them individually -->
+<div id="generateMatieresModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div class="bg-white rounded-lg shadow-lg w-11/12 max-w-3xl p-4">
+    <header class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-semibold">Générer des matières</h3>
+      <button type="button" onclick="closeGenerateModal()" aria-label="Fermer">✕</button>
+    </header>
+
+    <div class="mb-4">
+      <label for="gen-niveau" class="block text-sm font-medium">Niveau</label>
+      <select id="gen-niveau" class="mt-1 block w-full border rounded p-2">
+        <option value="">-- Choisir --</option>
+        {% if niveaux %}
+          {% for niv in niveaux %}
+            <option value="{{ niv.id }}">{{ niv.nom }}</option>
+          {% endfor %}
+        {% else %}
+          <option value="L1">L1</option>
+          <option value="L2">L2</option>
+          <option value="L3">L3</option>
+          <option value="M1">M1</option>
+          <option value="M2">M2</option>
+        {% endif %}
+      </select>
+    </div>
+
+    <div class="mb-4 flex items-center gap-2">
+      <label for="gen-count" class="block text-sm">Nombre</label>
+      <input id="gen-count" type="number" min="1" value="6" class="border rounded p-1 w-20" />
+      <button id="gen-run" class="ml-4 bg-blue-600 text-white px-3 py-1 rounded">Générer</button>
+      <span id="gen-status" class="text-sm text-gray-600 ml-4"></span>
+    </div>
+
+    <div id="gen-results" class="space-y-2 max-h-64 overflow-auto">
+      <!-- generated matieres will be inserted here -->
+    </div>
+
+    <footer class="mt-4 text-right">
+      <button type="button" onclick="closeGenerateModal()" class="px-3 py-1 border rounded">Fermer</button>
+    </footer>
+  </div>
+</div>
+
+<script>
+// Requires: the Flask generator running at http://localhost:5002 by default
+const GENERATOR_URL = window.GENERATOR_URL || 'http://localhost:5002/generate_matieres';
+
+function openGenerateModal() {
+  document.getElementById('generateMatieresModal').classList.remove('hidden');
+}
+function closeGenerateModal(){
+  document.getElementById('generateMatieresModal').classList.add('hidden');
+}
+
+async function postJSON(url, data, csrfToken) {
+  const headers = {'Content-Type':'application/json'};
+  if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+  const res = await fetch(url, {method:'POST', headers, body: JSON.stringify(data), credentials: 'include'});
+  return res;
+}
+
+function getCSRF() {
+  // simple helper to read csrftoken cookie (Django default name)
+  const name = 'csrftoken=';
+  const cookies = document.cookie.split(';');
+  for (let c of cookies) {
+    c = c.trim();
+    if (c.startsWith(name)) return c.substring(name.length);
+  }
+  return null;
+}
+
+const genRunBtn = document.getElementById('gen-run');
+if (genRunBtn) {
+  genRunBtn.addEventListener('click', async () => {
+  const select = document.getElementById('gen-niveau');
+  const niveauId = select.value;
+  const niveauLabel = select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : '';
+  const count = parseInt(document.getElementById('gen-count').value || '6', 10);
+  const status = document.getElementById('gen-status');
+  const results = document.getElementById('gen-results');
+  status.textContent = 'Génération en cours…';
+  results.innerHTML = '';
+
+    try {
+    const resp = await postJSON(GENERATOR_URL, {niveau: niveauLabel, count});
+    if (!resp.ok) throw new Error('Erreur génération');
+    const body = await resp.json();
+
+    // if generator returned no results, fallback to local DB API
+    if (!body || (Array.isArray(body.matieres) && body.matieres.length === 0)) {
+      status.textContent = 'Aucune matière générée par le service externe, récupération depuis la base locale…';
+      try {
+        const q = new URL(window.location.origin + '/program/api/matieres_json/');
+        if (niveauId) q.searchParams.set('niveau_id', niveauId);
+        const fallback = await fetch(q.toString(), {credentials: 'include'});
+        if (fallback.ok) {
+          const fb = await fallback.json();
+          if (fb.ok && fb.matieres && fb.matieres.length) {
+            status.textContent = `${fb.matieres.length} matières chargées depuis la base`;
+            body.matieres = fb.matieres;
+          } else {
+            status.textContent = 'Aucune matière disponible pour ce niveau';
+            return;
+          }
+        } else {
+          status.textContent = 'Erreur lors du fallback local';
+          return;
+        }
+      } catch (err) {
+        console.error('fallback error', err);
+        status.textContent = 'Erreur lors du fallback local';
+        return;
+      }
+    } else {
+      status.textContent = `${body.count} matières générées`;
+    }
+
+    for (const m of body.matieres) {
+      const item = document.createElement('div');
+      item.className = 'p-2 border rounded flex justify-between items-start gap-2';
+      // attach the selected niveau id so creation links the matiere to the right niveau document
+      const m_with_nid = Object.assign({}, m, {niveau_id: niveauId});
+      // encode JSON payload to avoid HTML quoting issues
+      const payloadAttr = encodeURIComponent(JSON.stringify(m_with_nid));
+      item.innerHTML = `<div class="flex-1">
+          <strong>${escapeHtml(m.nom)}</strong>
+          <div class="text-sm text-gray-600">Coef: ${m.coefficient} • Niveau: ${m.niveau || m.niveau_education || ''}</div>
+          <div class="text-sm mt-1">${escapeHtml(m.description)}</div>
+        </div>
+        <div class="flex-shrink-0">
+          <button class="add-matiere-btn bg-green-600 text-white px-2 py-1 rounded" data-m='${payloadAttr}'>Ajouter</button>
+        </div>`;
+      results.appendChild(item);
+    }
+    // use event delegation for add buttons and provide better feedback
+    results.addEventListener('click', async (ev) => {
+      const btn = ev.target.closest && ev.target.closest('.add-matiere-btn');
+      if (!btn) return;
+      try {
+        btn.textContent = 'Ajout...';
+        btn.disabled = true;
+        const raw = btn.getAttribute('data-m') || '';
+        const data = JSON.parse(decodeURIComponent(raw));
+        const createUrl = window.MATIERE_CREATE_URL || '/program/matieres/create/';
+        const csrf = getCSRF();
+        console.debug('Creating matiere', data, 'to', createUrl);
+        const r = await postJSON(createUrl, data, csrf);
+        if (r.ok) {
+          let body = null;
+          try {
+            body = await r.json();
+            console.debug('Create response', body);
+          } catch (e) {
+            // no-op
+          }
+          btn.textContent = 'Ajouté';
+          btn.classList.remove('bg-green-600');
+          btn.classList.add('bg-gray-400');
+          btn.disabled = true;
+
+          // try refresh the matieres panel so the admin sees the new entry
+          try {
+            const panel = document.getElementById('matieres-panel');
+            if (panel) {
+              const panelResp = await fetch(window.location.origin + '/program/matieres/panel', {credentials: 'include'});
+              if (panelResp.ok) {
+                const html = await panelResp.text();
+                // replace the panel in-place
+                panel.outerHTML = html;
+              }
+            }
+          } catch (refreshErr) {
+            console.warn('Could not refresh matieres panel', refreshErr);
+          }
+        } else {
+          const txt = await r.text();
+          console.error('Add failed', r.status, txt);
+          btn.textContent = 'Échec';
+          btn.disabled = false;
+          alert('Échec ajout: ' + r.status + '\n' + txt);
+        }
+      } catch (err) {
+        console.error('Exception while adding matiere', err);
+        try { btn.textContent = 'Erreur'; btn.disabled = false; } catch(e){}
+        alert('Erreur lors de l\'ajout : ' + (err && err.message ? err.message : String(err)));
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    status.textContent = 'Erreur lors de la génération';
+  }
+  });
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return s.replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c];
+  });
+}
+</script>

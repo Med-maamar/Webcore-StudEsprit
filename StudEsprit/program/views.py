@@ -2,9 +2,10 @@ from django.shortcuts import render, redirect
 from django import forms
 from . import services
 from django.http import HttpRequest
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.conf import settings
 from django.core.files.storage import default_storage
+from django.urls import reverse
 import tempfile
 import json
 from typing import Any, Dict
@@ -63,8 +64,19 @@ def niveaux_panel(request: HttpRequest, created: bool = False):
     except Exception:
         page_size = 20
     skip = max(0, (page - 1) * page_size)
+    # get total count to compute pages
+    try:
+        total_count = services.count_niveaux(q=q)
+    except Exception:
+        total_count = 0
+    total_pages = max(1, (total_count + page_size - 1) // page_size) if total_count is not None else 1
+    # clamp page
+    if page > total_pages:
+        page = total_pages
+    skip = max(0, (page - 1) * page_size)
     niveaux = services.list_niveaux(q=q, limit=page_size, skip=skip)
-    return render(request, "program/niveaux_panel.html", {"niveaux": niveaux, "created": created, "q": q or "", "page": page})
+    panel_url = reverse('niveaux_panel')
+    return render(request, "program/niveaux_panel.html", {"niveaux": niveaux, "created": created, "q": q or "", "page": page, "page_size": page_size, "panel_url": panel_url, "total_count": total_count, "total_pages": total_pages})
 
 
 def niveaux_partial(request: HttpRequest):
@@ -137,43 +149,129 @@ def matieres_partial(request: HttpRequest):
 
 
 def matieres_panel(request: HttpRequest, created: bool = False):
-    q = request.GET.get('q')
+    import traceback as _tb
     try:
-        page = int(request.GET.get('page', '1'))
-    except Exception:
-        page = 1
-    try:
-        page_size = int(request.GET.get('page_size', '20'))
-    except Exception:
-        page_size = 20
-    skip = max(0, (page - 1) * page_size)
-    matieres = services.list_matieres(q=q, limit=page_size, skip=skip)
-    # attach niveau names for display in the table
-    enriched = []
-    for m in matieres:
-        m_copy = dict(m)
+        q = request.GET.get('q')
         try:
-            nid = m.get('niveau_id')
-            niveau = services.get_niveau(nid) if nid else None
-            m_copy['niveau_nom'] = niveau.get('nom') if niveau else ''
+            page = int(request.GET.get('page', '1'))
         except Exception:
-            m_copy['niveau_nom'] = ''
-        enriched.append(m_copy)
-    return render(request, "program/matieres_panel.html", {"matieres": enriched, "created": created, "q": q or "", "page": page})
+            page = 1
+        try:
+            page_size = int(request.GET.get('page_size', '20'))
+        except Exception:
+            page_size = 20
+        skip = max(0, (page - 1) * page_size)
+        # total count for pagination
+        try:
+            total_count = services.count_matieres(q=q, niveau_id=request.GET.get('niveau_id'))
+        except Exception:
+            total_count = 0
+        total_pages = max(1, (total_count + page_size - 1) // page_size) if total_count is not None else 1
+        if page > total_pages:
+            page = total_pages
+            skip = max(0, (page - 1) * page_size)
+        matieres = services.list_matieres(q=q, limit=page_size, skip=skip)
+        # attach niveau names for display in the table
+        enriched = []
+        for m in matieres:
+            m_copy = dict(m)
+            try:
+                nid = m.get('niveau_id')
+                niveau = services.get_niveau(nid) if nid else None
+                m_copy['niveau_nom'] = niveau.get('nom') if niveau else ''
+            except Exception:
+                m_copy['niveau_nom'] = ''
+            enriched.append(m_copy)
+
+        # also provide niveaux for the generator modal
+        try:
+            niveaux = services.list_niveaux(limit=200)
+        except Exception:
+            niveaux = services.list_niveaux()
+        panel_url = reverse('matieres_panel')
+        return render(request, "program/matieres_panel.html", {"matieres": enriched, "created": created, "q": q or "", "page": page, "page_size": page_size, "panel_url": panel_url, "niveaux": niveaux, "total_count": total_count, "total_pages": total_pages})
+    except Exception as e:
+        tb = _tb.format_exc()
+        # Render a small error partial so HTMX receives HTML instead of 500
+        return render(request, "program/_panel_error.html", {"error": str(e), "trace": tb})
+
+
+def matieres_json(request):
+    """Return matieres for a given niveau as JSON. Used by admin modal as a fallback
+    when the external generator returns no results.
+
+    Query params:
+      - niveau_id: str (optional) : DB id of niveau to filter matieres. If omitted, returns recent matieres.
+    """
+    try:
+        niveau_id = request.GET.get("niveau_id")
+        if niveau_id:
+            matieres = services.list_matieres(niveau_id=niveau_id, limit=200)
+        else:
+            matieres = services.list_matieres(limit=200)
+        # serialize minimal fields for the modal
+        out = []
+        for m in matieres:
+            out.append({
+                "nom": m.get("nom"),
+                "description": m.get("description", ""),
+                "coefficient": m.get("coefficient", 1),
+                "niveau_id": str(m.get("niveau_id")) if m.get("niveau_id") else None,
+            })
+        return JsonResponse({"ok": True, "count": len(out), "matieres": out})
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
 
 def matiere_create(request: HttpRequest):
     if request.method == 'POST':
-        form = MatiereForm(request.POST)
-        if form.is_valid():
-            nom = form.cleaned_data["nom"]
-            desc = form.cleaned_data.get("description", "")
-            niveau_id = form.cleaned_data.get("niveau_id")
-            coef = form.cleaned_data.get("coefficient")
-            services.create_matiere(nom, desc, niveau_id, coefficient=coef)
-            if request.headers.get("Hx-Request") == "true":
-                return matieres_panel(request, created=True)
-            return redirect("matieres_list")
+        # Support both form-encoded submissions and JSON posts from the generator modal
+        if request.content_type and 'application/json' in request.content_type:
+            try:
+                import json
+                payload = json.loads(request.body.decode('utf-8') or '{}')
+            except Exception:
+                payload = {}
+            nom = payload.get('nom')
+            desc = payload.get('description', '')
+            niveau_id = payload.get('niveau_education') or payload.get('niveau_id')
+            coef = payload.get('coefficient')
+            # some payloads may give coef as string
+            try:
+                coef = float(coef) if coef is not None else 0
+            except Exception:
+                coef = 0
+            if nom:
+                created = services.create_matiere(nom, desc, niveau_id, coefficient=coef)
+                # build a minimal serializable representation to return
+                try:
+                    created_id = created.get('id') or str(created.get('_id'))
+                except Exception:
+                    created_id = str(created)
+                created_doc = {
+                    'id': created_id,
+                    'nom': created.get('nom'),
+                    'description': created.get('description', ''),
+                    'coefficient': created.get('coefficient', 0),
+                    'niveau_id': created.get('niveau_id')
+                }
+                # return JSON success for the modal
+                from django.http import JsonResponse
+                return JsonResponse({'ok': True, 'created_id': created_id, 'created': created_doc}, status=201)
+            else:
+                from django.http import JsonResponse
+                return JsonResponse({'ok': False, 'error': 'nom missing'}, status=400)
+        else:
+            form = MatiereForm(request.POST)
+            if form.is_valid():
+                nom = form.cleaned_data["nom"]
+                desc = form.cleaned_data.get("description", "")
+                niveau_id = form.cleaned_data.get("niveau_id")
+                coef = form.cleaned_data.get("coefficient")
+                services.create_matiere(nom, desc, niveau_id, coefficient=coef)
+                if request.headers.get("Hx-Request") == "true":
+                    return matieres_panel(request, created=True)
+                return redirect("matieres_list")
     else:
         form = MatiereForm()
     niveaux = services.list_niveaux(limit=200)
@@ -260,6 +358,15 @@ def cours_panel(request: HttpRequest, created: bool = False):
         page_size = 20
     skip = (page - 1) * page_size
     matiere_id = request.GET.get("matiere_id")
+    # total count for pagination
+    try:
+        total_count = services.count_cours(q=q, matiere_id=matiere_id)
+    except Exception:
+        total_count = 0
+    total_pages = max(1, (total_count + page_size - 1) // page_size) if total_count is not None else 1
+    if page > total_pages:
+        page = total_pages
+        skip = (page - 1) * page_size
     cours = services.list_cours(q=q, matiere_id=matiere_id, limit=page_size, skip=skip)
     matieres = services.list_matieres(limit=200)
     # annotate cours with matiere name
@@ -268,7 +375,8 @@ def cours_panel(request: HttpRequest, created: bool = False):
         mid = c.get('matiere_id')
         c['matiere_nom'] = mat_map.get(mid, '') if mid else ''
     form = CourForm()
-    context = {"cours": cours, "matieres": matieres, "form": form, "q": q or "", "page": page, "page_size": page_size, "created": created}
+    panel_url = reverse('cours_panel')
+    context = {"cours": cours, "matieres": matieres, "form": form, "q": q or "", "page": page, "page_size": page_size, "created": created, "panel_url": panel_url, "total_count": total_count, "total_pages": total_pages}
     return render(request, "program/_cours_panel.html", context)
 
 
@@ -284,13 +392,21 @@ def cours_partial(request: HttpRequest):
         page_size = 20
     skip = (page - 1) * page_size
     matiere_id = request.GET.get("matiere_id")
+    try:
+        total_count = services.count_cours(q=q, matiere_id=matiere_id)
+    except Exception:
+        total_count = 0
+    total_pages = max(1, (total_count + page_size - 1) // page_size) if total_count is not None else 1
+    if page > total_pages:
+        page = total_pages
+        skip = (page - 1) * page_size
     cours = services.list_cours(q=q, matiere_id=matiere_id, limit=page_size, skip=skip)
     matieres = services.list_matieres(limit=200)
     mat_map = {m.get('id') or str(m.get('_id')): m.get('nom') for m in matieres}
     for c in cours:
         mid = c.get('matiere_id')
         c['matiere_nom'] = mat_map.get(mid, '') if mid else ''
-    context = {"cours": cours, "q": q or "", "page": page, "page_size": page_size}
+    context = {"cours": cours, "q": q or "", "page": page, "page_size": page_size, "total_count": total_count, "total_pages": total_pages}
     return render(request, "program/_cours_table.html", context)
 
 

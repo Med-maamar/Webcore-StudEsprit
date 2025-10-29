@@ -38,6 +38,8 @@ urlpatterns = [
     path("public/program/niveau/<str:niveau_id>/generate_plan/pre/", views.public_generate_plan_pre, name="program_public_generate_plan_pre"),
     path("public/program/niveau/<str:niveau_id>/generate_plan/", views.public_generate_plan, name="program_public_generate_plan"),
     path("public/program/niveau/<str:niveau_id>/analyze_average/", views.public_analyze_average, name="program_public_analyze_average"),
+    # API endpoints
+    path("api/matieres_json/", views.matieres_json, name="matieres_json"),
     # Inline HTMX endpoints to load test/summary/pdf into the course detail page
     path("cours/view_test_inline/<str:cid>/", views.cour_view_test_inline, name="cour_view_test_inline"),
     path("cours/view_summary_inline/<str:cid>/", views.cour_view_summary_inline, name="cour_view_summary_inline"),
