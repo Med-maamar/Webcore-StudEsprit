@@ -90,6 +90,7 @@
         </div>
       </div>
     </div>
+    
 
     <!-- Documents List -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
@@ -185,6 +186,11 @@
                   <button onclick="deleteDocument('{{ document.id }}')" class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200" title="Supprimer">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                  </button>
+                  <button onclick="processDocument('{{ document.id }}', this)" class="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200" title="Traiter le document">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                   </button>
                 </div>
@@ -308,15 +314,110 @@ function generateQA() {
   button.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Génération...';
   button.disabled = true;
   
-  fetch(`/library/api/documents/${currentDocumentId}/qa-pairs/`)
+  fetch(`/library/api/documents/${currentDocumentId}/qa-pairs/?num=5`)
     .then(response => response.json())
     .then(data => {
       if (data.qa_pairs) {
-        let qaText = 'Questions et réponses générées:\n\n';
+        // Build interactive quiz modal (same style as reader)
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden';
+        const head = document.createElement('div');
+        head.className = 'p-6 border-b border-gray-200 flex items-center justify-between';
+        head.innerHTML = '<h3 class="text-xl font-bold text-gray-900">Questions (format quiz)</h3>\
+          <button onclick="this.closest(\' .fixed \' ).remove()" class="text-gray-400 hover:text-gray-600">\
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">\
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>\
+            </svg>\
+          </button>';
+        const body = document.createElement('div');
+        body.className = 'p-6 overflow-y-auto max-h-[60vh]';
+        const form = document.createElement('form');
+        form.id = 'qaFormHome';
+        form.className = 'space-y-4';
+
+        window.__lastQaPairsHome = data.qa_pairs;
         data.qa_pairs.forEach((qa, index) => {
-          qaText += `${index + 1}. ${qa.question}\n   Réponse: ${qa.answer}\n\n`;
+          const item = document.createElement('div');
+          item.className = 'p-4 border border-gray-100 rounded bg-white';
+          item.setAttribute('data-qa-index', index);
+
+          const q = document.createElement('h4');
+          q.className = 'font-semibold flex items-center justify-between gap-2';
+          const left = document.createElement('span');
+          left.textContent = `${index + 1}. ${qa.question}`;
+          const chips = document.createElement('span');
+          chips.className = 'flex items-center gap-2 text-xs';
+          if (qa.difficulty) { const chip = document.createElement('span'); chip.className = 'px-2 py-0.5 rounded-full bg-gray-100 text-gray-700'; chip.textContent = qa.difficulty; chips.appendChild(chip); }
+          if (qa.reference) { const ref = document.createElement('span'); ref.className = 'px-2 py-0.5 rounded-full bg-blue-50 text-blue-700'; ref.textContent = qa.reference; chips.appendChild(ref); }
+          q.appendChild(left); q.appendChild(chips); item.appendChild(q);
+
+          const inputContainer = document.createElement('div');
+          inputContainer.className = 'mt-2';
+
+          if (qa.type === 'mcq' && Array.isArray(qa.options) && qa.options.length) {
+            const opts = qa.options.slice();
+            for (let i = opts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [opts[i], opts[j]] = [opts[j], opts[i]]; }
+            opts.forEach((opt, oi) => {
+              const id = `qa_home_${index}_opt_${oi}`;
+              const label = document.createElement('label');
+              label.className = 'flex items-center gap-3 mt-2';
+              const input = document.createElement('input');
+              input.type = 'radio'; input.name = `qa_home_${index}`; input.value = opt; input.id = id; input.className = 'form-radio h-4 w-4 text-esprit-red';
+              const span = document.createElement('span'); span.className = 'text-sm text-gray-800'; span.textContent = opt;
+              label.appendChild(input); label.appendChild(span); inputContainer.appendChild(label);
+            });
+          } else if (qa.type === 'tf') {
+            ['True', 'False'].forEach((opt, oi) => {
+              const id = `qa_home_${index}_opt_tf_${oi}`;
+              const label = document.createElement('label'); label.className = 'flex items-center gap-3 mt-2';
+              const input = document.createElement('input'); input.type = 'radio'; input.name = `qa_home_${index}`; input.value = opt; input.id = id; input.className = 'form-radio h-4 w-4 text-esprit-red';
+              const span = document.createElement('span'); span.className = 'text-sm text-gray-800'; span.textContent = opt;
+              label.appendChild(input); label.appendChild(span); inputContainer.appendChild(label);
+            });
+          } else {
+            ['True', 'False'].forEach((opt, oi) => {
+              const id = `qa_home_${index}_opt_tf_${oi}`;
+              const label = document.createElement('label'); label.className = 'flex items-center gap-3 mt-2';
+              const input = document.createElement('input'); input.type = 'radio'; input.name = `qa_home_${index}`; input.value = opt; input.id = id; input.className = 'form-radio h-4 w-4 text-esprit-red';
+              const span = document.createElement('span'); span.className = 'text-sm text-gray-800'; span.textContent = opt;
+              label.appendChild(input); label.appendChild(span); inputContainer.appendChild(label);
+            });
+          }
+
+          const ans = document.createElement('input'); ans.type = 'hidden'; ans.name = `qa_home_${index}_answer`; ans.value = qa.answer || '';
+          item.appendChild(inputContainer); item.appendChild(ans);
+
+          form.appendChild(item);
         });
-        showResult('Q&A générées', qaText);
+
+        const actions = document.createElement('div'); actions.className = 'mt-4 flex gap-2 items-center';
+        const submitBtn = document.createElement('button'); submitBtn.type = 'button'; submitBtn.className = 'bg-esprit-red text-white px-4 py-2 rounded'; submitBtn.textContent = 'Soumettre les réponses';
+        submitBtn.onclick = () => gradeQuizHome();
+        const resultSummary = document.createElement('div'); resultSummary.id = 'quizResultSummaryHome'; resultSummary.className = 'text-sm text-gray-700 ml-3';
+        actions.appendChild(submitBtn); actions.appendChild(resultSummary); form.appendChild(actions);
+
+        body.appendChild(form); card.appendChild(head); card.appendChild(body); modal.appendChild(card); document.body.appendChild(modal);
+
+        function gradeQuizHome() {
+          const pairs = window.__lastQaPairsHome || []; if (!pairs.length) return alert('Aucune question à noter');
+          let correct = 0;
+          for (let idx = 0; idx < pairs.length; idx++) {
+            const name = `qa_home_${idx}`; const inputs = document.getElementsByName(name); let selected = null;
+            if (inputs && inputs.length) { for (let i = 0; i < inputs.length; i++) { if (inputs[i].checked) { selected = inputs[i].value; break; } } }
+            
+            const canonical = (document.querySelector(`input[name='${name}_answer']`) || {}).value || '';
+            const isCorrect = compareAnswersHome(selected, canonical, pairs[idx].type);
+            if (isCorrect) correct += 1;
+          }
+          const total = pairs.length; const summaryEl = document.getElementById('quizResultSummaryHome'); if (summaryEl) summaryEl.innerHTML = `<strong>Score:</strong> ${correct}/${total}`;
+        }
+
+        function compareAnswersHome(selected, canonical, qtype) {
+          if (!selected || !canonical) return false; try { const s = String(selected).trim().toLowerCase(); const c = String(canonical).trim().toLowerCase(); if (qtype === 'mcq' || qtype === 'tf') { return s === c; } return s === c || s.includes(c) || c.includes(s); } catch(e){ return false; }
+        }
+
       } else {
         showError('Erreur lors de la génération des Q&A');
       }
@@ -418,7 +519,7 @@ function deleteDocument(docId) {
     })
     .then(response => response.json())
     .then(data => {
-      if (data.status === 'success') {
+      if (data.success) {
         location.reload();
       } else {
         alert('Erreur lors de la suppression du document');
@@ -429,6 +530,38 @@ function deleteDocument(docId) {
       alert('Erreur lors de la suppression du document');
     });
   }
+}
+
+function processDocument(docId, btn) {
+  if (!confirm('Lancer le traitement du document (extraction + embeddings) ?')) return;
+  const original = btn.innerHTML;
+  btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle></svg>';
+  btn.disabled = true;
+
+  fetch(`/library/api/documents/${docId}/process/`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      'Accept': 'application/json'
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data && data.success) {
+      alert('Traitement terminé. Le document est maintenant prêt pour l\'IA.');
+      location.reload();
+    } else {
+      alert('Échec du traitement: ' + (data.error || JSON.stringify(data)));
+    }
+  })
+  .catch(err => {
+    console.error('processDocument error', err);
+    alert('Erreur lors du traitement du document');
+  })
+  .finally(() => {
+    btn.innerHTML = original;
+    btn.disabled = false;
+  });
 }
 
 // Implemented functions for dashboard features
@@ -685,5 +818,85 @@ function showCollaborationModal(data) {
   `;
   document.body.appendChild(modal);
 }
+</script>
+<script>
+// Study Path widget on home page
+async function fetchStudyPathWidget() {
+  try {
+    const res = await fetch('/library/api/study-path/');
+    const data = await res.json();
+    const container = document.getElementById('studyPathContent');
+    if (!container) return;
+    if (data.status !== 'ok') {
+      container.innerHTML = '<div class="text-sm text-red-600">Impossible de charger le parcours.</div>';
+      return;
+    }
+    const path = data.study_path || [];
+    if (!path.length) {
+      let html = '<div class="text-sm text-gray-600">Aucun sujet trouvé. Cliquez sur Ouvrir pour générer votre parcours.</div>';
+      if (data.career_suggestions && data.career_suggestions.length) {
+        html += '<div class="mt-3"><div class="text-sm font-medium text-esprit-dark">Suggestions de carrière</div>' + data.career_suggestions.map(r => `
+          <div class="flex items-center justify-between bg-indigo-50 p-2 rounded mt-1">
+            <div class="text-xs">${escapeHtml(r.career)}</div>
+            <div class="text-xs text-gray-500">Score: ${r.score}</div>
+          </div>
+        `).join('') + '</div>';
+      }
+      container.innerHTML = html;
+      return;
+    }
+
+    container.innerHTML = '';
+    path.slice(0,4).forEach(topic => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between bg-gray-50 p-3 rounded';
+      const left = document.createElement('div');
+      left.innerHTML = `<div class="font-medium">${escapeHtml(topic.title || topic.name || 'Sujet')}</div><div class="text-xs text-gray-500">Difficulté: ${escapeHtml(topic.difficulty || 'moyenne')}</div>`;
+      const right = document.createElement('div');
+      const mastery = Math.round((topic.mastery||0)*100);
+      right.innerHTML = `<div class="text-xs text-gray-600 mb-1">Maîtrise: ${mastery}%</div><div class="w-28 h-2 bg-gray-200 rounded overflow-hidden"><div style="width:${mastery}%" class="h-2 bg-green-500"></div></div>`;
+      row.appendChild(left);
+      row.appendChild(right);
+      container.appendChild(row);
+    });
+
+    if (path.length > 4) {
+      const more = document.createElement('div');
+      more.className = 'text-xs text-gray-500 mt-2';
+      more.textContent = `+ ${path.length - 4} autres sujets`;
+      container.appendChild(more);
+    }
+
+    // Append career suggestions if present
+    if (data.career_suggestions && data.career_suggestions.length) {
+      const box = document.createElement('div');
+      box.className = 'mt-3';
+      box.innerHTML = '<div class="text-sm font-medium text-esprit-dark">Suggestions de carrière</div>' + data.career_suggestions.map(r => `
+        <div class="flex items-center justify-between bg-indigo-50 p-2 rounded mt-1">
+          <div class="text-xs">${escapeHtml(r.career)}</div>
+          <div class="text-xs text-gray-500">Score: ${r.score}</div>
+        </div>
+      `).join('');
+      container.appendChild(box);
+    }
+  } catch (err) {
+    console.error('fetchStudyPathWidget error', err);
+    const container = document.getElementById('studyPathContent');
+    if (container) container.innerHTML = '<div class="text-sm text-red-600">Erreur lors du chargement du parcours.</div>';
+  }
+}
+
+function openStudyPathFromHome() {
+  // Prefer opening the reader page with session if available; otherwise open the library reader for first document
+  // We will open the study path modal on the reader page by navigating there and letting the reader JS open the modal via URL param
+  // If you want a dedicated study-path page, we can add it later.
+  window.location.href = '/library/';
+  // Also try to refresh widget on return
+}
+
+// Fetch study path on page load
+document.addEventListener('DOMContentLoaded', () => {
+  fetchStudyPathWidget();
+});
 </script>
 {% endblock %}

@@ -22,13 +22,44 @@ from django.conf import settings
 
 from core.decorators import login_required_mongo
 from django.http import HttpResponse
+from core.mongo import get_db
+from bson import ObjectId
 from library.models import DocumentService, ChatService, EmbeddingService, CommunityService
 from core.library_services import (
     PDFProcessor, EmbeddingProcessor, AIService, 
     SemanticSearchService, process_uploaded_document
 )
+from core.personalized_study import PersonalizedStudyPathAI
+from ml_service.personalized_training import build_dataset, train_model, load_model, recommend_for_user
 
 logger = logging.getLogger(__name__)
+
+# --- Profanity dataset (loaded once) ---
+_PROFANITY_SET = set()
+try:
+    dataset_path = os.path.join(os.path.dirname(__file__), 'profanity_dataset.csv')
+    if os.path.exists(dataset_path):
+        import csv
+        with open(dataset_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                term = (row.get('term') or '').strip().lower()
+                if term:
+                    _PROFANITY_SET.add(term)
+except Exception as _e:
+    logger.warning(f"Failed to load profanity dataset: {_e}")
+
+def _contains_profanity(text: str) -> bool:
+    try:
+        if not text:
+            return False
+        low = text.lower()
+        for w in _PROFANITY_SET:
+            if w in low:
+                return True
+        return False
+    except Exception:
+        return False
 
 
 def library_test(request):
@@ -424,6 +455,54 @@ def document_qa_pairs(request, doc_id):
 
 
 @login_required_mongo
+@require_http_methods(["POST"])
+@csrf_exempt
+def submit_document_quiz(request, doc_id):
+    """Accept quiz submission for a document. Expected JSON body:
+    { score: float, total: int, results: [{question, selected, correct, type}], metadata: {...} }
+    This will append the quiz result to the document record (field `quizzes`).
+    """
+    try:
+        data = json.loads(request.body.decode('utf-8') or '{}')
+        user_id = request.user.id
+
+        document = DocumentService.get_document_by_id(doc_id)
+        if not document or str(document.get('user_id')) != user_id:
+            return JsonResponse({'error': 'Document not found or access denied'}, status=404)
+
+        # Basic validation
+        score = data.get('score')
+        total = data.get('total')
+        results = data.get('results')
+
+        entry = {
+            'score': float(score) if score is not None else None,
+            'total': int(total) if total is not None else None,
+            'results': results or [],
+            'submitted_by': str(user_id),
+            'submitted_at': datetime.utcnow(),
+            'metadata': data.get('metadata', {})
+        }
+
+        # Append to document record
+        try:
+            appended = DocumentService.append_quiz_result(doc_id, entry)
+        except Exception:
+            appended = False
+
+        if appended:
+            return JsonResponse({'status': 'ok'})
+        else:
+            # still return ok to avoid blocking frontend, but indicate not persisted
+            return JsonResponse({'status': 'ok', 'persisted': False})
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        logger.error(f"Error in submit_document_quiz: {e}")
+        return JsonResponse({'error': 'Internal server error'}, status=500)
+
+
+@login_required_mongo
 @require_http_methods(["GET"])
 def document_analysis(request, doc_id):
     """Get document structure analysis."""
@@ -491,6 +570,222 @@ def document_export(request, doc_id):
     except Exception as e:
         logger.error(f"Error exporting document: {e}")
         return JsonResponse({'error': 'Failed to export document'}, status=500)
+
+
+@login_required_mongo
+@require_http_methods(["POST"])
+def process_document(request, doc_id):
+    """Trigger processing (text extraction + embeddings) for a document by id.
+
+    Synchronous helper for testing: calls core.library_services.process_uploaded_document
+    with the absolute file path derived from the document record.
+    """
+    try:
+        db = get_db()
+        documents = db.documents
+        try:
+            oid = ObjectId(doc_id)
+        except Exception:
+            return JsonResponse({"success": False, "error": "invalid_document_id"}, status=400)
+        doc = documents.find_one({"_id": oid})
+        if not doc:
+            return JsonResponse({"success": False, "error": "document_not_found"}, status=404)
+
+        # Permission: ensure the requesting user owns the document or is staff
+        user_id = str(request.user.id)
+        owner_id = str(doc.get('user_id') or '')
+        if owner_id and owner_id != user_id and not request.user.is_staff:
+            return JsonResponse({"success": False, "error": "forbidden"}, status=403)
+
+        file_path = doc.get('file_path')
+        if not file_path:
+            return JsonResponse({"success": False, "error": "no_file_path"}, status=400)
+
+        # Build absolute path using MEDIA_ROOT if necessary
+        if os.path.isabs(file_path):
+            abs_path = file_path
+        else:
+            abs_path = os.path.join(settings.MEDIA_ROOT, file_path)
+
+        try:
+            process_uploaded_document(abs_path, doc_id)
+        except Exception as e:
+            logger.error(f"Error processing document {doc_id}: {e}")
+            return JsonResponse({"success": False, "error": "processing_failed", "details": str(e)}, status=500)
+
+        updated = documents.find_one({"_id": oid})
+        return JsonResponse({"success": True, "is_processed": bool(updated.get('is_processed'))})
+
+    except Exception as e:
+        logger.error(f"Error in process_document view: {e}")
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+# --- Personalized Study Path API ---
+@login_required_mongo
+@require_http_methods(["GET"])
+def study_path(request):
+    """Return the user's current study profile and path."""
+    try:
+        user = request.user
+        service = PersonalizedStudyPathAI()
+        profile = service.fetch_profile(user.id)
+        path = service.fetch_study_path(user.id)
+        career = service.recommend_careers(user.id)
+        # Ensure serializable
+        return JsonResponse({"status": "ok", "profile": profile or {}, "study_path": path or [], "career_suggestions": career or []})
+    except Exception as e:
+        logger.error(f"Error fetching study path: {e}")
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@login_required_mongo
+@require_http_methods(["POST"])
+@csrf_exempt
+def analyze_user_documents(request):
+    """Trigger analysis of the user's uploaded documents to build/update the study profile."""
+    try:
+        user = request.user
+        service = PersonalizedStudyPathAI()
+        # Run analysis and gather diagnostics
+        merged = service.analyze_user_documents(user.id)
+
+        # Gather diagnostic info about user's documents
+        from library.models import DocumentService
+        docs, total = DocumentService.get_user_documents(user.id, page=1, page_size=1000)
+        scanned = 0
+        processed = 0
+        sample_ids = []
+        for d in docs:
+            scanned += 1
+            if d.get('is_processed'):
+                processed += 1
+            sample_ids.append(str(d.get('_id')))
+
+        return JsonResponse({
+            "status": "ok",
+            "topics_found": len(merged),
+            "topics_preview": merged[:3],
+            "documents_scanned": scanned,
+            "documents_processed": processed,
+            "sample_document_ids": sample_ids[:5]
+        })
+    except Exception as e:
+        logger.error(f"Error analyzing user documents: {e}")
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@login_required_mongo
+@require_http_methods(["POST"])
+@csrf_exempt
+def update_study_path(request):
+    """Update progress for a topic. Expected JSON body: {topic_id, mastery_score, status, quiz_result}"""
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        user = request.user
+        topic_id = data.get('topic_id')
+        mastery = data.get('mastery_score')
+        status = data.get('status')
+        quiz_result = data.get('quiz_result')
+        if not topic_id:
+            return HttpResponse('topic_id required', status=400)
+        service = PersonalizedStudyPathAI()
+        service.update_progress(user.id, topic_id, mastery_score=mastery, status=status, quiz_result=quiz_result)
+        return JsonResponse({"status": "ok"})
+    except Exception as e:
+        logger.error(f"Error updating study path: {e}")
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@login_required_mongo
+@require_http_methods(["POST"])
+@csrf_exempt
+def study_path_answer(request):
+    """Ask a question in the context of the user's study path. Expected JSON: {question: '...'}"""
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        question = data.get('question')
+        if not question:
+            return HttpResponse('question required', status=400)
+        user = request.user
+        service = PersonalizedStudyPathAI()
+        answer = service.answer_with_path_context(user.id, question)
+        return JsonResponse({"status": "ok", "answer": answer})
+    except Exception as e:
+        logger.error(f"Error answering with study path context: {e}")
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+@login_required_mongo
+@require_http_methods(["POST"])
+@csrf_exempt
+def train_study_model(request):
+    """Trigger dataset build and model training. Returns basic metrics.
+
+    This is synchronous and intended for manual/testing use. In production,
+    training should be performed in a background worker.
+    """
+    try:
+        # Allow optional model path in POST body
+        data = {}
+        try:
+            data = json.loads(request.body.decode('utf-8') or '{}')
+        except Exception:
+            data = {}
+
+        model_path = data.get('model_path') or os.path.join('ml_service', 'models', 'personalized_model.pkl')
+        csv_path = data.get('csv_path') or os.path.join('ml_service', 'data', 'personalized_dataset.csv')
+
+        # Build dataset
+        df = build_dataset()
+        if df.empty:
+            return JsonResponse({'status': 'error', 'message': 'No training data available'}, status=400)
+
+        # Save CSV
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+        df.to_csv(csv_path, index=False)
+
+        # Train model and save
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
+        metrics = train_model(df=df, save_model_path=model_path)
+
+        return JsonResponse({'status': 'ok', 'metrics': metrics, 'model_path': model_path, 'csv_path': csv_path})
+    except Exception as e:
+        logger.error(f"Error training study model: {e}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required_mongo
+@require_http_methods(["GET", "POST"])
+def recommend_topics(request):
+    """Return top-k recommended topics for the current user.
+
+    GET params: ?k=5
+    POST body optional: {"model_path": "..."}
+    """
+    try:
+        user = request.user
+        k = int(request.GET.get('k', 5))
+        model_path = None
+        if request.method == 'POST':
+            try:
+                body = json.loads(request.body.decode('utf-8') or '{}')
+                model_path = body.get('model_path')
+            except Exception:
+                model_path = None
+
+        if not model_path:
+            model_path = os.path.join('ml_service', 'models', 'personalized_model.pkl')
+
+        # Validate model exists
+        if not os.path.exists(model_path):
+            return JsonResponse({'status': 'error', 'message': 'Model not found', 'model_path': model_path}, status=404)
+
+        recs = recommend_for_user(str(user.id), model_path)
+        return JsonResponse({'status': 'ok', 'recommendations': recs[:k]})
+    except Exception as e:
+        logger.error(f"Error generating recommendations: {e}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 
 @login_required_mongo
@@ -683,14 +978,49 @@ def create_post(request):
         if not title or not content:
             messages.error(request, 'Le titre et le contenu sont obligatoires.')
             return redirect('library:create_post')
+        # Profanity check
+        if _contains_profanity(title) or _contains_profanity(content):
+            messages.error(request, "Votre post contient des propos interdits. Merci d'utiliser un langage approprié.")
+            return redirect('library:create_post')
         
         try:
+            # Handle attachments if any
+            attachments_meta = []
+            files = request.FILES.getlist('attachments') if hasattr(request, 'FILES') else []
+            for f in files:
+                try:
+                    # Save file under media/community/<user_id>/
+                    save_path = default_storage.save(f'community/{request.user.id}/{f.name}', ContentFile(f.read()))
+                    file_url = default_storage.url(save_path)
+                    attachments_meta.append({
+                        'name': f.name,
+                        'url': file_url,
+                        'size': f.size,
+                        'content_type': f.content_type,
+                        'path': save_path,
+                    })
+                except Exception as e:
+                    logger.warning(f"Failed to save attachment {f.name}: {e}")
+
+            service_offer = True if request.POST.get('offer_service') in ['on', 'true', '1'] else False
+            service_description = request.POST.get('service_description', '').strip()
+            contact_pref = request.POST.get('contact_pref', '').strip()
+
+            # Profanity check for service fields
+            if _contains_profanity(service_description) or _contains_profanity(contact_pref):
+                messages.error(request, "Les champs de l'offre contiennent des propos interdits.")
+                return redirect('library:create_post')
+
             post_id = CommunityService.create_post(
                 user_id=request.user.id,
                 title=title,
                 content=content,
                 category=category,
-                tags=tags
+                tags=tags,
+                attachments=attachments_meta,
+                service_offer=service_offer,
+                service_description=service_description,
+                contact_pref=contact_pref,
             )
             messages.success(request, 'Votre post a été créé avec succès!')
             return redirect('library:view_post', post_id=post_id)
@@ -745,6 +1075,8 @@ def add_comment(request):
         
         if not post_id or not content:
             return JsonResponse({'error': 'Post ID et contenu requis'}, status=400)
+        if _contains_profanity(content):
+            return JsonResponse({'error': 'Commentaire refusé (propos interdits).'}, status=400)
         
         result = CommunityService.add_comment(post_id, request.user.id, content)
         

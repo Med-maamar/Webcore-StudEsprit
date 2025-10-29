@@ -27,7 +27,16 @@ urlpatterns = [
     path('api/documents/<str:doc_id>/summary/', views.document_summary, name='document_summary'),
     path('api/documents/<str:doc_id>/qa-pairs/', views.document_qa_pairs, name='document_qa_pairs'),
     path('api/documents/<str:doc_id>/analysis/', views.document_analysis, name='document_analysis'),
+    path('api/documents/<str:doc_id>/submit-quiz/', views.submit_document_quiz, name='submit_document_quiz'),
     path('api/documents/<str:doc_id>/export/', views.document_export, name='document_export'),
+    path('api/documents/<str:doc_id>/process/', views.process_document, name='process_document'),
+    # Personalized Study Path
+    path('api/study-path/', views.study_path, name='study_path'),
+    path('api/study-path/update/', views.update_study_path, name='update_study_path'),
+    path('api/study-path/analyze/', views.analyze_user_documents, name='analyze_user_documents'),
+    path('api/study-path/answer/', views.study_path_answer, name='study_path_answer'),
+    path('api/study-path/train/', views.train_study_model, name='train_study_model'),
+    path('api/study-path/recommend/', views.recommend_topics, name='recommend_topics'),
     
     # Dashboard features
     path('api/analytics/', views.analytics_dashboard, name='analytics_dashboard'),

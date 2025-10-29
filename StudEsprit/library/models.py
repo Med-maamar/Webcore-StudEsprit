@@ -93,6 +93,23 @@ class DocumentService:
                 }
             }
         )
+
+    @staticmethod
+    def append_quiz_result(doc_id: str, quiz_result: Dict[str, Any]) -> bool:
+        """Append a quiz result entry to a document record (stored in `quizzes` list)."""
+        try:
+            oid = ObjectId(doc_id)
+        except Exception:
+            return False
+
+        res = get_db().documents.update_one(
+            {"_id": oid},
+            {
+                "$push": {"quizzes": quiz_result},
+                "$set": {"updated_at": datetime.utcnow()}
+            }
+        )
+        return res.modified_count > 0
     
     @staticmethod
     def delete_document(doc_id: str, user_id: str) -> bool:
@@ -324,8 +341,18 @@ class CommunityService:
     """Service for community features - posts, comments, and interactions."""
     
     @staticmethod
-    def create_post(user_id: str, title: str, content: str, category: str = "general", tags: List[str] = None) -> str:
-        """Create a new community post."""
+    def create_post(
+        user_id: str,
+        title: str,
+        content: str,
+        category: str = "general",
+        tags: List[str] = None,
+        attachments: List[Dict[str, Any]] = None,
+        service_offer: bool = False,
+        service_description: str = None,
+        contact_pref: str = None,
+    ) -> str:
+        """Create a new community post. Attachments is a list of dicts with keys: name, url, size, content_type."""
         db = get_db()
         now = datetime.utcnow()
         post = {
@@ -334,6 +361,10 @@ class CommunityService:
             "content": content,
             "category": category,
             "tags": tags or [],
+            "attachments": attachments or [],
+            "service_offer": bool(service_offer),
+            "service_description": service_description or "",
+            "contact_pref": contact_pref or "",
             "likes": [],
             "comments": [],
             "views": 0,
