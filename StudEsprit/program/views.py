@@ -409,3 +409,66 @@ def cour_view_test(request: HttpRequest, cid=None):
         raise Http404("Cours not found")
     questions = c.get('generated_tests') or []
     return render(request, "program/_cours_tests_modal.html", {"questions": questions, "cid": cid})
+
+
+def cour_generate_summary(request: HttpRequest, cid=None):
+    """Generate an extractive summary for a course from its uploaded PDF.
+    Returns an HTML partial (modal) with the generated summary and saves it to the course document.
+    """
+    c = services.get_cour(cid)
+    if not c:
+        raise Http404("Cours not found")
+    pdf_src = c.get('courpdf')
+    if not pdf_src:
+        return render(request, "program/_cours_summary_modal.html", {"error": "Aucun PDF associé à ce cours.", "summary": None})
+
+    tmp_path = None
+    try:
+        try:
+            import requests
+        except Exception:
+            requests = None
+        try:
+            from ml_service import generator as ml_generator
+        except ModuleNotFoundError as e:
+            return render(request, "program/_cours_summary_modal.html", {"error": f"Le module de génération n'est pas disponible: {e}. Installez les dépendances ml_service.", "summary": None})
+
+        # fetch or read PDF into temp file
+        if isinstance(pdf_src, str) and pdf_src.startswith('http'):
+            if not requests:
+                return render(request, "program/_cours_summary_modal.html", {"error": "Le paquet 'requests' n'est pas installé sur le serveur.", "summary": None})
+            r = requests.get(pdf_src)
+            r.raise_for_status()
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tf:
+                tf.write(r.content)
+                tmp_path = tf.name
+        else:
+            rel = pdf_src
+            if pdf_src.startswith(settings.MEDIA_URL):
+                rel = pdf_src[len(settings.MEDIA_URL):]
+                rel = rel.lstrip('/')
+            with default_storage.open(rel, 'rb') as fh, tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tf:
+                tf.write(fh.read())
+                tmp_path = tf.name
+
+        summary = ml_generator.generate_summary_from_text(tmp_path, num_sentences=5)
+        # persist summary into course doc
+        services.update_cour(cid, {'generated_summary': summary})
+        return render(request, "program/_cours_summary_modal.html", {"summary": summary, "cid": cid})
+    except Exception as e:
+        return render(request, "program/_cours_summary_modal.html", {"error": str(e), "summary": None})
+    finally:
+        if tmp_path:
+            try:
+                import os
+                os.remove(tmp_path)
+            except Exception:
+                pass
+
+
+def cour_view_summary(request: HttpRequest, cid=None):
+    c = services.get_cour(cid)
+    if not c:
+        raise Http404("Cours not found")
+    summary = c.get('generated_summary') or None
+    return render(request, "program/_cours_summary_modal.html", {"summary": summary, "cid": cid})

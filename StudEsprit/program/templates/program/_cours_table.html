@@ -36,8 +36,22 @@
                   </svg>
                 </button>
 
-                <!-- Generate test (kept as text button) -->
-
+                          <button hx-post="{% url 'cour_generate_test' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" 
+                                  class="px-3 py-1 rounded-md bg-indigo-600 text-white text-xs hover:bg-indigo-700 transition">
+                            📝 Générer test
+                          </button>
+                          <button hx-get="{% url 'cour_view_test' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" 
+                                  class="px-3 py-1 rounded-md bg-emerald-600 text-white text-xs hover:bg-emerald-700 transition">
+                            👁️ Voir test
+                          </button>
+                          <button hx-post="{% url 'cour_generate_summary' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" 
+                                  class="px-3 py-1 rounded-md bg-purple-600 text-white text-xs hover:bg-purple-700 transition">
+                            📄 Générer résumé
+                          </button>
+                          <button hx-get="{% url 'cour_view_summary' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" 
+                                  class="px-3 py-1 rounded-md bg-teal-600 text-white text-xs hover:bg-teal-700 transition">
+                            👁️ Voir résumé
+                          </button>
                 <!-- Delete (trash) -->
                 <form method="post" hx-post="{% url 'cour_delete' c.id %}" hx-target="#cours-panel" hx-swap="outerHTML" class="inline-block">
                   {% csrf_token %}
