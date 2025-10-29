@@ -79,7 +79,11 @@
             </div>
           </div>
           <a href="/events/" class="hover:text-esprit-red">Actualités</a>
-          <a href="/library/" class="hover:text-esprit-red">Bibliothèque</a>
+          {% if current_user and current_user.is_authenticated and current_user.role == 'Admin' %}
+            <a href="/admin/library/documents/" class="hover:text-esprit-red">Bibliothèque (Admin)</a>
+          {% else %}
+            <a href="/library/" class="hover:text-esprit-red">Bibliothèque</a>
+          {% endif %}
         </nav>
         <div class="flex items-center gap-2">
           {% if current_user and current_user.is_authenticated %}

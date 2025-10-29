@@ -33,7 +33,11 @@
   <article class="bg-white rounded-2xl shadow p-6 border border-gray-200">
     <h2 class="text-esprit-red font-semibold text-lg mb-2">Bibliothèque IA</h2>
     <p class="text-sm text-esprit-gray">Uploadez vos documents PDF et interrogez-les avec notre assistant IA intelligent.</p>
-    <a href="/library/" class="mt-3 inline-flex items-center text-esprit-red font-semibold">Accéder →</a>
+    {% if current_user and current_user.is_authenticated and current_user.role == 'Admin' %}
+      <a href="/admin/library/documents/" class="mt-3 inline-flex items-center text-esprit-red font-semibold">Accéder (Admin) →</a>
+    {% else %}
+      <a href="/library/" class="mt-3 inline-flex items-center text-esprit-red font-semibold">Accéder →</a>
+    {% endif %}
   </article>
 </section>
 
@@ -71,7 +75,11 @@
     <h3 class="text-xl font-semibold mb-4">Services rapides</h3>
     <ul class="space-y-3 text-sm">
       <li><a href="/auth/login" class="flex justify-between items-center hover:text-esprit-red">Portail étudiant <span>→</span></a></li>
-      <li><a href="/library/" class="flex justify-between items-center hover:text-esprit-red">Bibliothèque IA <span>→</span></a></li>
+      {% if current_user and current_user.is_authenticated and current_user.role == 'Admin' %}
+        <li><a href="/admin/library/documents/" class="flex justify-between items-center hover:text-esprit-red">Bibliothèque IA <span>→</span></a></li>
+      {% else %}
+        <li><a href="/library/" class="flex justify-between items-center hover:text-esprit-red">Bibliothèque IA <span>→</span></a></li>
+      {% endif %}
       <li><a href="/services/" class="flex justify-between items-center hover:text-esprit-red">Scolarité <span>→</span></a></li>
       <li><a href="/events/" class="flex justify-between items-center hover:text-esprit-red">Calendrier académique <span>→</span></a></li>
       <li><a href="/shop/" class="flex justify-between items-center hover:text-esprit-red">Boutique officielle <span>→</span></a></li>
