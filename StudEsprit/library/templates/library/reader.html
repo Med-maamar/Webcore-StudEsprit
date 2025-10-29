@@ -201,6 +201,39 @@
   </div>
 </div>
 
+<!-- Result Modal (used for summaries & QA) -->
+<div id="resultModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+  <div class="flex items-start justify-center min-h-screen p-6">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 id="resultModalTitle" class="text-xl font-bold text-gray-900">Résultat</h3>
+          <div id="resultMeta" class="text-sm text-gray-600">&nbsp;</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <label for="refineTone" class="text-sm text-gray-600 mr-2">Ton</label>
+          <select id="refineTone" class="px-2 py-1 border border-gray-200 rounded text-sm">
+            <option value="professional">Professionnel</option>
+            <option value="concise">Concise</option>
+            <option value="detailed">Développé</option>
+            <option value="friendly">Amical</option>
+          </select>
+          <button id="refineBtn" class="text-sm bg-esprit-red text-white px-3 py-2 rounded hover:bg-red-700" title="Affiner le résultat">Affiner</button>
+          <button id="undoRefineBtn" class="text-sm text-gray-600 px-3 py-2 rounded hover:bg-gray-100 hidden">Annuler</button>
+          <button id="copyResultBtn" class="text-sm text-gray-600 px-3 py-2 rounded hover:bg-gray-100">Copier</button>
+          <button id="downloadResultBtn" class="text-sm text-gray-600 px-3 py-2 rounded hover:bg-gray-100">Télécharger</button>
+          <button onclick="closeResultModal()" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="resultModalBody" class="prose max-w-none text-gray-800 overflow-y-auto" style="max-height:60vh"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 const sessionId = '{{ session_id }}';
 const documentId = '{{ document.id }}';
@@ -210,50 +243,73 @@ let isLoading = false;
 loadChatHistory();
 
 // Chat form submission
-document.getElementById('chatForm').addEventListener('submit', function(e) {
+document.getElementById('chatForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  sendMessage();
+  await sendMessage();
 });
 
-function sendMessage() {
+async function sendMessage() {
   const input = document.getElementById('messageInput');
   const message = input.value.trim();
-  
+  const submitButton = document.querySelector('#chatForm button[type="submit"]');
+
   if (!message || isLoading) return;
   
   // Add user message to chat
   addMessage('user', message);
   input.value = '';
   
-  // Show loading indicator
+  // Show loading indicator and mark loading state
   showLoadingIndicator();
-  
-  // Send to server
-  fetch('/library/api/chat/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-    },
-    body: JSON.stringify({
-      session_id: sessionId,
-      message: message
-    })
-  })
-  .then(response => response.json())
-  .then(data => {
-    hideLoadingIndicator();
-    if (data.response) {
-      addMessage('assistant', data.response);
+  isLoading = true;
+  if (submitButton) submitButton.disabled = true;
+
+  try {
+    // First: ask in French
+    const frResponse = await fetch('/library/api/chat/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      },
+      body: JSON.stringify({
+        session_id: sessionId,
+        message: `Réponds en français : ${message}`
+      })
+    }).then(r => r.json());
+
+    if (frResponse && frResponse.response) {
+      addMessage('assistant', `FR — ${frResponse.response}`);
     } else {
-      addMessage('assistant', 'Désolé, je n\'ai pas pu traiter votre demande.');
+      addMessage('assistant', 'FR — Désolé, je n\'ai pas pu traiter votre demande.');
     }
-  })
-  .catch(error => {
-    hideLoadingIndicator();
+
+    // Then: ask in English
+    const enResponse = await fetch('/library/api/chat/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      },
+      body: JSON.stringify({
+        session_id: sessionId,
+        message: `Please respond in English: ${message}`
+      })
+    }).then(r => r.json());
+
+    if (enResponse && enResponse.response) {
+      addMessage('assistant', `EN — ${enResponse.response}`);
+    } else {
+      addMessage('assistant', 'EN — Sorry, I could not process your request.');
+    }
+  } catch (error) {
     console.error('Error:', error);
     addMessage('assistant', 'Une erreur est survenue. Veuillez réessayer.');
-  });
+  } finally {
+    hideLoadingIndicator();
+    isLoading = false;
+    if (submitButton) submitButton.disabled = false;
+  }
 }
 
 function addMessage(role, content) {
@@ -347,12 +403,30 @@ function generateSummary() {
   const originalText = button.innerHTML;
   button.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Génération...';
   button.disabled = true;
-  
+
   fetch(`/library/api/documents/${documentId}/summary/`)
     .then(response => response.json())
     .then(data => {
       if (data.summary) {
-        addMessage('assistant', `Voici un résumé du document:\n\n${data.summary}`);
+        // Populate result modal with a professional layout
+        const titleEl = document.getElementById('resultModalTitle');
+        const bodyEl = document.getElementById('resultModalBody');
+        titleEl.textContent = 'Résumé Professionnel';
+        // Simple paragraph splitting for readability
+        const paragraphs = data.summary.split('\n\n');
+        bodyEl.innerHTML = '';
+        paragraphs.forEach(p => {
+          const pEl = document.createElement('p');
+          pEl.className = 'text-gray-800';
+          pEl.textContent = p.trim();
+          bodyEl.appendChild(pEl);
+        });
+        // Show modal
+        document.getElementById('resultModal').classList.remove('hidden');
+        // wire copy/download buttons
+        document.getElementById('copyResultBtn').onclick = () => copyText(data.summary);
+        document.getElementById('downloadResultBtn').onclick = () => downloadText(data.summary, `${documentId}_summary.txt`);
+
         closeDocumentTools();
       } else {
         alert('Erreur lors de la génération du résumé');
@@ -373,16 +447,37 @@ function generateQA() {
   const originalText = button.innerHTML;
   button.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Génération...';
   button.disabled = true;
-  
+
   fetch(`/library/api/documents/${documentId}/qa-pairs/`)
     .then(response => response.json())
     .then(data => {
       if (data.qa_pairs) {
-        let qaText = 'Voici quelques questions et réponses basées sur le document:\n\n';
+        const titleEl = document.getElementById('resultModalTitle');
+        const bodyEl = document.getElementById('resultModalBody');
+        titleEl.textContent = 'Questions & Réponses';
+        bodyEl.innerHTML = '';
+
+        const list = document.createElement('div');
         data.qa_pairs.forEach((qa, index) => {
-          qaText += `${index + 1}. **${qa.question}**\n   ${qa.answer}\n\n`;
+          const item = document.createElement('div');
+          item.className = 'mb-4';
+          const q = document.createElement('h4');
+          q.className = 'font-semibold';
+          q.textContent = `${index + 1}. ${qa.question}`;
+          const a = document.createElement('p');
+          a.className = 'text-gray-700 mt-1';
+          a.textContent = qa.answer;
+          item.appendChild(q);
+          item.appendChild(a);
+          list.appendChild(item);
         });
-        addMessage('assistant', qaText);
+        bodyEl.appendChild(list);
+
+        document.getElementById('resultModal').classList.remove('hidden');
+        const serialized = data.qa_pairs.map((qa, i) => `${i+1}. Q: ${qa.question}\nA: ${qa.answer}`).join('\n\n');
+        document.getElementById('copyResultBtn').onclick = () => copyText(serialized);
+        document.getElementById('downloadResultBtn').onclick = () => downloadText(serialized, `${documentId}_qa.txt`);
+
         closeDocumentTools();
       } else {
         alert('Erreur lors de la génération des Q&A');
@@ -396,6 +491,108 @@ function generateQA() {
       button.innerHTML = originalText;
       button.disabled = false;
     });
+}
+
+function closeResultModal() {
+  document.getElementById('resultModal').classList.add('hidden');
+  document.getElementById('resultModalBody').innerHTML = '';
+}
+
+function copyText(text) {
+  if (!navigator.clipboard) {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    alert('Copié dans le presse-papiers');
+    return;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Copié dans le presse-papiers');
+  }).catch(() => {
+    alert('Impossible de copier');
+  });
+}
+
+function downloadText(text, filename) {
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// Refine result using the chat endpoint (FR) — keeps original and allows undo
+document.getElementById('refineBtn').addEventListener('click', function() {
+  refineResult();
+});
+document.getElementById('undoRefineBtn').addEventListener('click', function() {
+  const body = document.getElementById('resultModalBody');
+  const original = body.getAttribute('data-original');
+  if (original) {
+    body.innerHTML = original;
+    body.removeAttribute('data-original');
+  }
+  document.getElementById('undoRefineBtn').classList.add('hidden');
+});
+
+async function refineResult() {
+  const tone = document.getElementById('refineTone').value || 'professional';
+  const bodyEl = document.getElementById('resultModalBody');
+  const originalText = bodyEl.innerText || bodyEl.textContent || '';
+  if (!originalText.trim()) return alert('Aucun contenu à affiner');
+
+  // Save original for undo
+  if (!bodyEl.getAttribute('data-original')) {
+    bodyEl.setAttribute('data-original', bodyEl.innerHTML);
+  }
+
+  // Show loading
+  const refineBtn = document.getElementById('refineBtn');
+  const undoBtn = document.getElementById('undoRefineBtn');
+  refineBtn.disabled = true;
+  refineBtn.textContent = 'Affinage...';
+
+  // Prepare prompt in French to refine and structure the content for students
+  const prompt = `Reformule et améliore le texte suivant pour des étudiants universitaires : rends-le professionnel, clair et actionnable. Fournis : 1) un titre concis, 2) 4-6 points clés (takeaways), 3) suggestions concrètes d'étude/next steps, 4) un court paragraphe explicatif. Ne change pas le sens. Ton: ${tone.toUpperCase()}\n\n---\n${originalText}`;
+
+  try {
+    const res = await fetch('/library/api/chat/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+      },
+      body: JSON.stringify({ session_id: sessionId, message: prompt })
+    });
+    const data = await res.json();
+    if (data && data.response) {
+      // Replace modal body with refined output and enable undo
+      bodyEl.innerText = data.response;
+      document.getElementById('resultModalTitle').textContent += ' — Affiné';
+      undoBtn.classList.remove('hidden');
+      // update meta
+      document.getElementById('resultMeta').textContent = `Affiné (${tone})`;
+      // wire copy/download to refined text
+      document.getElementById('copyResultBtn').onclick = () => copyText(data.response);
+      document.getElementById('downloadResultBtn').onclick = () => downloadText(data.response, `${documentId}_refined.txt`);
+    } else {
+      alert('Impossible d\'affiner le texte pour le moment.');
+    }
+  } catch (err) {
+    console.error('Refine error', err);
+    alert('Erreur lors de l\'affinage');
+  } finally {
+    refineBtn.disabled = false;
+    refineBtn.textContent = 'Affiner';
+  }
 }
 
 function analyzeDocument() {

@@ -2,12 +2,16 @@
   <div class="absolute inset-0 bg-black opacity-40" style="z-index:1000"></div>
   <div class="bg-white rounded-xl p-6 w-full max-w-3xl relative overflow-y-auto max-h-[90vh]" style="z-index:1010">
     <div class="flex items-center justify-between mb-4">
-      <h3 class="text-xl font-bold text-esprit-dark">📝 Quiz Généré</h3>
-      <button class="text-gray-400 hover:text-gray-600" onclick="document.getElementById('cours-modal').innerHTML = ''">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-        </svg>
-      </button>
+      <h3 class="text-xl font-bold text-esprit-dark">📝 Quiz généré — Questions</h3>
+      <div class="flex items-center gap-2">
+        <button class="text-sm text-gray-600 px-3 py-2 rounded hover:bg-gray-100" onclick="copyQuiz()">Copier</button>
+        <button class="text-sm text-gray-600 px-3 py-2 rounded hover:bg-gray-100" onclick="downloadQuiz()">Télécharger</button>
+        <button class="text-gray-400 hover:text-gray-600" onclick="document.getElementById('cours-modal').innerHTML = ''">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
     </div>
     
     {% if error %}
@@ -33,6 +37,9 @@
               <span x-text="showAnswers ? 'Masquer' : 'Afficher'"></span>
             </button>
           </div>
+          {% if questions %}
+            <pre id="quizSerialized" class="hidden">{% for q in questions %}{{ forloop.counter }}. {{ q.question }}\n{% for letter, option in q.options.items %}  {{ letter }}. {{ option }}\n{% endfor %}Réponse: {{ q.correct_answer }}. {{ q.answer_text }}\n\n{% endfor %}</pre>
+          {% endif %}
           
           <!-- Questions -->
           {% for q in questions %}
@@ -103,3 +110,24 @@
 
 <!-- Alpine.js pour l'interactivité -->
 <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+<script>
+function copyQuiz() {
+  const pre = document.getElementById('quizSerialized');
+  if (!pre) return alert('Aucun quiz à copier');
+  const text = pre.textContent;
+  if (!navigator.clipboard) {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    return alert('Quiz copié');
+  }
+  navigator.clipboard.writeText(text).then(() => alert('Quiz copié')).catch(() => alert('Impossible de copier'));
+}
+
+function downloadQuiz() {
+  const pre = document.getElementById('quizSerialized');
+  if (!pre) return alert('Aucun quiz à télécharger');
+  const text = pre.textContent;
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'quiz.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+</script>
