@@ -5,10 +5,26 @@ from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from core.views import coming_soon, home
 from django.views.generic import RedirectView
+from careers.views import (
+    AdminApplicationsListView,
+    AdminApplicationDetailView,
+    AdminApplicationInterviewView,
+    AdminInterviewUpdateView,
+    AdminInterviewDeleteView,
+    AdminApplicationValidateView,
+)
 from accounts.urls import account_urlpatterns
 
 
 urlpatterns = [
+    # Custom admin (careers) must come BEFORE Django admin catch-all
+    path("admin/careers/applications/", AdminApplicationsListView.as_view(), name="careers-admin-applications"),
+    path("admin/careers/applications/<str:pk>/", AdminApplicationDetailView.as_view(), name="careers-admin-application-detail"),
+    path("admin/careers/applications/<str:pk>/interview/", AdminApplicationInterviewView.as_view(), name="careers-admin-application-interview"),
+    path("admin/careers/interviews/<str:pk>/", AdminInterviewUpdateView.as_view(), name="careers-admin-interview-update"),
+    path("admin/careers/interviews/<str:pk>/delete/", AdminInterviewDeleteView.as_view(), name="careers-admin-interview-delete"),
+    path("admin/careers/applications/<str:pk>/validate/", AdminApplicationValidateView.as_view(), name="careers-admin-application-validate"),
+
     path("admin/", admin.site.urls),
     path("", home, name="home"),
     path("auth/", include("accounts.urls")),

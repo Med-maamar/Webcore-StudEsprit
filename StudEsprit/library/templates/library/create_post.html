@@ -26,7 +26,8 @@
 
     <!-- Create Post Form -->
     <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-      <form method="POST" class="space-y-6">
+      <!-- NOTE: form enctype added to allow attachments; backend must handle request.FILES to persist files -->
+      <form method="POST" enctype="multipart/form-data" class="space-y-6">
         {% csrf_token %}
         
         <!-- Title -->
@@ -84,6 +85,40 @@
           <p class="text-sm text-gray-500 mt-2">
             Séparez les tags par des virgules. Cela aidera les autres à trouver votre post.
           </p>
+        </div>
+
+        <!-- Attachments -->
+        <div>
+          <label for="attachments" class="block text-sm font-semibold text-gray-900 mb-2">
+            Fichiers (optionnel)
+          </label>
+          <input id="attachments" name="attachments" type="file" multiple
+                 accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.md,.jpg,.jpeg,.png"
+                 class="w-full text-sm text-gray-600">
+          <p class="text-sm text-gray-500 mt-2">Vous pouvez joindre des documents pour aider les autres (PDF, DOCX, images...). Maximum recommandé: 10 Mo par fichier.</p>
+          <div id="attachmentsPreview" class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+        </div>
+
+        <!-- Offer Services -->
+        <div class="border-t pt-4">
+          <h4 class="text-sm font-semibold text-gray-900 mb-2">Offrez votre aide</h4>
+          <label class="inline-flex items-center gap-2">
+            <input type="checkbox" id="offerService" name="offer_service" class="rounded" />
+            <span class="text-sm text-gray-700">Je propose mes services gratuitement pour aider d'autres étudiants</span>
+          </label>
+          <div id="serviceDetails" class="mt-3 hidden">
+            <label for="service_description" class="block text-sm font-semibold text-gray-900 mb-2">Description du service (optionnel)</label>
+            <textarea id="service_description" name="service_description" rows="4"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                      placeholder="Décrivez vos compétences, disponibilité, et la façon dont vous pouvez aider (ex: tutorat, relecture, coaching de projet)..."></textarea>
+
+            <label for="contact_pref" class="block text-sm font-semibold text-gray-900 mb-2 mt-3">Préférence de contact</label>
+            <select id="contact_pref" name="contact_pref" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              <option value="in_app">Message dans l'application</option>
+              <option value="email">Email</option>
+              <option value="other">Autre (précisez dans la description)</option>
+            </select>
+          </div>
         </div>
 
         <!-- Submit Buttons -->
@@ -189,5 +224,41 @@ document.querySelector('form').addEventListener('submit', function(e) {
     return false;
   }
 });
+
+// Attachments preview and validation
+const attachmentsInput = document.getElementById('attachments');
+const attachmentsPreview = document.getElementById('attachmentsPreview');
+if (attachmentsInput) {
+  attachmentsInput.addEventListener('change', function() {
+    attachmentsPreview.innerHTML = '';
+    const files = Array.from(this.files || []);
+    const allowed = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','text/plain','image/jpeg','image/png','application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation','text/markdown'];
+    files.forEach(file => {
+      const el = document.createElement('div');
+      el.className = 'p-3 bg-gray-50 rounded-lg text-sm text-gray-700 border border-gray-100';
+      const info = document.createElement('div');
+      info.innerHTML = `<strong>${file.name}</strong><div class="text-xs text-gray-500">${(file.size/1024/1024).toFixed(2)} MB</div>`;
+      el.appendChild(info);
+      // Basic type check
+      if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|docx?|pptx?|txt|md|jpe?g|png)$/i)) {
+        const warn = document.createElement('div');
+        warn.className = 'text-xs text-red-500 mt-1';
+        warn.textContent = 'Type de fichier non supporté';
+        el.appendChild(warn);
+      }
+      attachmentsPreview.appendChild(el);
+    });
+  });
+}
+
+// Offer service toggle
+const offerCheckbox = document.getElementById('offerService');
+const serviceDetails = document.getElementById('serviceDetails');
+if (offerCheckbox) {
+  offerCheckbox.addEventListener('change', function() {
+    if (this.checked) serviceDetails.classList.remove('hidden'); else serviceDetails.classList.add('hidden');
+  });
+}
 </script>
 {% endblock %}
+

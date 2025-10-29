@@ -39,6 +39,35 @@
         <div class="whitespace-pre-wrap text-gray-800 leading-relaxed">{{ post.content }}</div>
       </div>
       
+      {% if post.attachments %}
+        <div class="mt-6 pt-6 border-t border-gray-200">
+          <h4 class="font-semibold mb-2">Fichiers partagés</h4>
+          <div class="flex flex-wrap gap-3">
+            {% for f in post.attachments %}
+              <a href="{{ f.url }}" target="_blank" class="inline-flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100 text-sm text-gray-700">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m7-7H5"></path></svg>
+                {{ f.name }}
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if post.service_offer or post.service_description %}
+        <div class="mt-6 pt-6 border-t border-gray-200 bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg">
+          <h4 class="font-semibold mb-2">Offre d'aide</h4>
+          {% if post.service_offer %}
+            <p class="text-gray-800">Cet utilisateur propose son aide gratuitement.</p>
+          {% endif %}
+          {% if post.service_description %}
+            <p class="text-gray-700 mt-2">{{ post.service_description }}</p>
+          {% endif %}
+          {% if post.contact_pref %}
+            <p class="text-sm text-gray-600 mt-2">Préférence contact: {{ post.contact_pref }}</p>
+          {% endif %}
+        </div>
+      {% endif %}
+
       {% if post.tags %}
         <div class="mt-6 pt-6 border-t border-gray-200">
           <div class="flex flex-wrap gap-2">
@@ -75,14 +104,20 @@
           <span>{{ post.created_at|date:"d/m/Y à H:i" }}</span>
         </div>
         
-        <div class="flex items-center gap-2">
-          <button onclick="toggleLike('{{ post.id }}')" 
+          <div class="flex items-center gap-2">
+          <button id="like-btn-{{ post.id }}" onclick="toggleLike('{{ post.id }}', event)" 
                   class="p-2 {% if post.is_liked %}text-red-500 bg-red-50{% else %}text-gray-400 hover:text-red-500 hover:bg-red-50{% endif %} rounded-lg transition-all duration-200"
                   title="{% if post.is_liked %}Ne plus aimer{% else %}Aimer{% endif %}">
             <svg class="w-5 h-5 {% if post.is_liked %}fill-current{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
             </svg>
           </button>
+          <button id="dislike-btn-{{ post.id }}" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all duration-200" onclick="toggleDislike('{{ post.id }}', event)" title="Je n'aime pas">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67 10.94 4.61a5.5 5.5 0 00-7.78 7.78l1.05 1.06L12 21.23l7.79-7.78 1.05-1.06a5.5 5.5 0 000-7.78z"></path>
+            </svg>
+          </button>
+          <span id="dislikes-count" class="text-sm text-gray-500 ml-1">0</span>
           {% if post.is_author %}
             <button onclick="deletePost('{{ post.id }}')" 
                     class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200"
@@ -176,7 +211,7 @@
 const postId = '{{ post.id }}';
 
 // Toggle like on post
-function toggleLike(postId) {
+function toggleLike(postId, event) {
   fetch('/library/api/community/like/', {
     method: 'POST',
     headers: {
@@ -190,7 +225,7 @@ function toggleLike(postId) {
   .then(response => response.json())
   .then(data => {
     if (data.success) {
-      const button = event.target.closest('button');
+      const button = document.getElementById(`like-btn-${postId}`) || event.target.closest('button');
       const likeIcon = button.querySelector('svg');
       const likeCount = document.getElementById('likes-count');
       
@@ -198,12 +233,12 @@ function toggleLike(postId) {
         button.classList.add('text-red-500', 'bg-red-50');
         button.classList.remove('text-gray-400');
         likeIcon.classList.add('fill-current');
-        likeCount.textContent = data.count;
+        if (likeCount) likeCount.textContent = data.count;
       } else {
         button.classList.remove('text-red-500', 'bg-red-50');
         button.classList.add('text-gray-400');
         likeIcon.classList.remove('fill-current');
-        likeCount.textContent = data.count;
+        if (likeCount) likeCount.textContent = data.count;
       }
     }
   })
@@ -211,6 +246,43 @@ function toggleLike(postId) {
     console.error('Error:', error);
   });
 }
+
+// Toggle dislike locally (frontend-only)
+function toggleDislike(postId, event) {
+  const key = `post_disliked_${postId}`;
+  const disliked = localStorage.getItem(key) === '1';
+  const dislikeCountEl = document.getElementById('dislikes-count');
+  const dislikeBtn = document.getElementById(`dislike-btn-${postId}`) || event.target.closest('button');
+
+  let current = parseInt(dislikeCountEl ? dislikeCountEl.textContent || '0' : '0', 10);
+  if (!disliked) {
+    localStorage.setItem(key, '1');
+    current = current + 1;
+    if (dislikeBtn) dislikeBtn.classList.add('text-blue-500');
+  } else {
+    localStorage.removeItem(key);
+    current = Math.max(0, current - 1);
+    if (dislikeBtn) dislikeBtn.classList.remove('text-blue-500');
+  }
+
+  if (dislikeCountEl) dislikeCountEl.textContent = current;
+}
+
+// Initialize dislike state for this post (if needed)
+document.addEventListener('DOMContentLoaded', function() {
+  const key = `post_disliked_${postId}`;
+  const disliked = localStorage.getItem(key) === '1';
+  const dislikeCountEl = document.getElementById('dislikes-count');
+  const dislikeBtn = document.getElementById(`dislike-btn-${postId}`);
+  if (disliked) {
+    if (dislikeBtn) dislikeBtn.classList.add('text-blue-500');
+    if (dislikeCountEl) {
+      let c = parseInt(dislikeCountEl.textContent || '0', 10);
+      if (c === 0) c = 1;
+      dislikeCountEl.textContent = c;
+    }
+  }
+});
 
 // Add comment
 document.getElementById('commentForm').addEventListener('submit', function(e) {
@@ -291,3 +363,4 @@ function toggleCommentLike(commentId) {
 }
 </script>
 {% endblock %}
+

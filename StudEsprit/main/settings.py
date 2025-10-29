@@ -77,7 +77,12 @@ WSGI_APPLICATION = "main.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.dummy",
+        # Use a lightweight sqlite3 database for Django ORM-backed apps in development.
+        # The project primarily uses MongoDB for most data, but some apps (events, admin)
+        # still rely on Django models, so provide a local sqlite DB to avoid
+        # "ENGINE" misconfiguration errors during template rendering or admin use.
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 

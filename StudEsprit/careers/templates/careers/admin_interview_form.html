@@ -1,0 +1,24 @@
+<form hx-post="{% url 'careers:admin-application-interview' app.id %}" hx-target="#admin-modal-content" hx-swap="innerHTML" class="space-y-3">
+  {% csrf_token %}
+  {% if error %}
+    <div class="p-2 rounded bg-red-50 text-red-700 border border-red-200 text-sm">{{ error }}</div>
+  {% endif %}
+  <div class="grid grid-cols-2 gap-3">
+    <div>
+      <label class="text-sm text-gray-600">Date</label>
+      <input type="date" name="date" class="mt-1 w-full border rounded px-2 py-1" required />
+    </div>
+    <div>
+      <label class="text-sm text-gray-600">Heure</label>
+      <input type="time" name="time" class="mt-1 w-full border rounded px-2 py-1" required />
+    </div>
+  </div>
+  <div>
+    <label class="text-sm text-gray-600">Durée (minutes)</label>
+    <input type="number" name="duration" min="15" step="5" value="30" class="mt-1 w-full border rounded px-2 py-1" />
+  </div>
+  <div class="flex justify-end gap-2">
+    <button type="button" class="px-4 py-2 border rounded text-gray-600" onclick="document.getElementById('admin-modal').classList.add('hidden')">Annuler</button>
+    <button type="submit" class="px-4 py-2 rounded bg-esprit-red text-white">Planifier</button>
+  </div>
+</form>
