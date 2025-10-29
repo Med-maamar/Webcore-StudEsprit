@@ -36,22 +36,29 @@
                   </svg>
                 </button>
 
+                          {% if not c.generated_tests %}
                           <button hx-post="{% url 'cour_generate_test' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" 
                                   class="px-3 py-1 rounded-md bg-indigo-600 text-white text-xs hover:bg-indigo-700 transition">
                             📝 Générer test
                           </button>
+                          {% else %}
                           <button hx-get="{% url 'cour_view_test' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" 
                                   class="px-3 py-1 rounded-md bg-emerald-600 text-white text-xs hover:bg-emerald-700 transition">
                             👁️ Voir test
                           </button>
-                          <button hx-post="{% url 'cour_generate_summary' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" 
-                                  class="px-3 py-1 rounded-md bg-purple-600 text-white text-xs hover:bg-purple-700 transition">
-                            📄 Générer résumé
-                          </button>
+                          {% endif %}
+                          {# Show either Generate or View summary depending on whether a summary exists #}
+                          {% if c.generated_summary %}
                           <button hx-get="{% url 'cour_view_summary' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" 
                                   class="px-3 py-1 rounded-md bg-teal-600 text-white text-xs hover:bg-teal-700 transition">
                             👁️ Voir résumé
                           </button>
+                          {% else %}
+                          <button hx-post="{% url 'cour_generate_summary' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" 
+                                  class="px-3 py-1 rounded-md bg-purple-600 text-white text-xs hover:bg-purple-700 transition">
+                            📝 Générer résumé
+                          </button>
+                          {% endif %}
                 <!-- Delete (trash) -->
                 <form method="post" hx-post="{% url 'cour_delete' c.id %}" hx-target="#cours-panel" hx-swap="outerHTML" class="inline-block">
                   {% csrf_token %}
@@ -83,7 +90,7 @@
         <div class="flex items-center gap-2">
           {% if c.courpdf %}<a href="{{ c.courpdf }}" target="_blank" class="text-esprit-red underline">Voir PDF</a>{% endif %}
         </div>
-        <div class="flex gap-2 items-center">
+          <div class="flex gap-2 items-center">
           <button hx-get="{% url 'cour_edit' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" title="Modifier" aria-label="Modifier" class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-blue-600 text-white hover:bg-blue-700">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path d="M17.414 2.586a2 2 0 0 0-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 0 0 0-2.828z" />
@@ -91,7 +98,18 @@
             </svg>
           </button>
 
-          <button hx-post="{% url 'cour_generate_test' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" title="Générer test" class="px-3 py-1 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700">Générer</button>
+          {% if not c.generated_tests %}
+            <button hx-post="{% url 'cour_generate_test' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" title="Générer test" class="px-3 py-1 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700">Générer</button>
+          {% else %}
+            <button hx-get="{% url 'cour_view_test' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" title="Voir test" class="px-3 py-1 rounded-md bg-emerald-600 text-white text-sm hover:bg-emerald-700">Voir</button>
+          {% endif %}
+
+          {# Summary buttons for mobile list: show view if exists, otherwise generate #}
+          {% if c.generated_summary %}
+            <button hx-get="{% url 'cour_view_summary' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" class="px-3 py-1 rounded-md bg-teal-600 text-white text-sm hover:bg-teal-700">Voir résumé</button>
+          {% else %}
+            <button hx-post="{% url 'cour_generate_summary' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" class="px-3 py-1 rounded-md bg-purple-600 text-white text-sm hover:bg-purple-700">Générer résumé</button>
+          {% endif %}
 
           <form method="post" hx-post="{% url 'cour_delete' c.id %}" hx-target="#cours-panel" hx-swap="outerHTML" class="inline-block">
             {% csrf_token %}
@@ -104,6 +122,18 @@
         </div>
       </div>
       {% endfor %}
+    </div>
+    <!-- Pagination controls -->
+    <div class="p-4 border-t bg-gray-50 flex items-center justify-between">
+      <div class="text-sm text-gray-600">Page {{ page }} / {{ total_pages }}{% if page_size %} · Taille page: {{ page_size }}{% endif %}</div>
+      <div class="flex items-center gap-2">
+        {% if page|add:'-1' >= 1 and page > 1 %}
+          <a hx-get="{{ panel_url }}?page={{ page|add:'-1' }}{% if page_size %}&page_size={{ page_size }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}" hx-target="#cours-panel" hx-swap="outerHTML" class="px-3 py-1 border rounded">&laquo; Précédent</a>
+        {% endif %}
+        {% if total_pages and page < total_pages %}
+          <a hx-get="{{ panel_url }}?page={{ page|add:'1' }}{% if page_size %}&page_size={{ page_size }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}" hx-target="#cours-panel" hx-swap="outerHTML" class="px-3 py-1 bg-indigo-600 text-white rounded">Suivant &raquo;</a>
+        {% endif %}
+      </div>
     </div>
   </div>
 {% else %}

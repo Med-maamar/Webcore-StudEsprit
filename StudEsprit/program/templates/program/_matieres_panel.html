@@ -4,6 +4,11 @@
       <h2 id="matieres-heading" class="text-xl font-semibold">Matières</h2>
       <p class="text-sm text-gray-500">Liste des matières. Filtrez par niveau si besoin.</p>
     </div>
+      <div class="mt-2 md:mt-0">
+        <button onclick="openGenerateModal()" class="inline-flex items-center gap-2 bg-indigo-600 text-white px-3 py-1 rounded">
+          Générer matières
+        </button>
+      </div>
  
   </div>
 
@@ -17,4 +22,12 @@
 
   <!-- Modal container for edit forms -->
   <div id="matieres-modal" aria-live="polite"></div>
+  {% include 'program/_generate_matieres_modal.html' %}
+
+  <script>
+    // expose the create URL for the modal's JS
+    window.MATIERE_CREATE_URL = "{% url 'matiere_create' %}";
+    // optionally override GENERATOR_URL if the generator runs elsewhere
+    window.GENERATOR_URL = window.GENERATOR_URL || 'http://localhost:5002/generate_matieres';
+  </script>
 </div>
