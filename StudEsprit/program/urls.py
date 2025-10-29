@@ -24,4 +24,6 @@ urlpatterns = [
     path("cours/edit/<str:cid>/", views.cour_edit, name="cour_edit"),
     path("cours/generate_test/<str:cid>/", views.cour_generate_test, name="cour_generate_test"),
     path("cours/view_test/<str:cid>/", views.cour_view_test, name="cour_view_test"),
+    path("cours/generate_summary/<str:cid>/", views.cour_generate_summary, name="cour_generate_summary"),
+    path("cours/view_summary/<str:cid>/", views.cour_view_summary, name="cour_view_summary"),
 ]

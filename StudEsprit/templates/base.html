@@ -139,5 +139,31 @@
       <div class="px-4 py-2 rounded-xl shadow bg-white border border-gray-200 text-esprit-dark">{{ message }}</div>
     {% endfor %}
   </div>
+
+  <!-- HTMX CSRF support: attach Django CSRF token from cookie to HTMX requests -->
+  <script>
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          // Does this cookie string begin with the name we want?
+          if (cookie.startsWith(name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    document.body.addEventListener('htmx:configRequest', function(event) {
+      const csrftoken = getCookie('csrftoken');
+      if (csrftoken) {
+        event.detail.headers['X-CSRFToken'] = csrftoken;
+      }
+    });
+  </script>
 </body>
 </html>
