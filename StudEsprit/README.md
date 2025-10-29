@@ -129,3 +129,6 @@ curl -X POST http://127.0.0.1:8000/api/ai/cv-gap-analysis/ \
 - Middleware injects `request.user` via Mongo session user_id
 - Security: CSRF enabled, secure cookies in production; TODO: add CSP and HSTS
 - UI: Tailwind + Flowbite + HTMX, green/white theme, dark mode toggle
+
+
+## Test branche tesnim 
