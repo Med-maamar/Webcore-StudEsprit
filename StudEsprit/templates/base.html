@@ -7,8 +7,10 @@
   <title>StudEsprit</title>
   <link rel="stylesheet" href="{% static 'build/tailwind.css' %}">
   <script defer src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script defer src="https://unpkg.com/flowbite@2.5.1/dist/flowbite.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>[x-cloak]{display:none !important}</style>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -59,25 +61,19 @@
         <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
           <a href="/" class="hover:text-esprit-red">Accueil</a>
           <a href="/courses/" class="hover:text-esprit-red">Programmes</a>
-          <div class="relative">
-            <button id="careersDropdownButton" data-dropdown-toggle="careersDropdown" data-dropdown-placement="bottom" class="inline-flex items-center gap-1 hover:text-esprit-red" type="button">
-              Carrières
-              <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 9l-7 7-7-7" />
-              </svg>
+          {% if not current_user or current_user.role|lower != 'admin' %}
+          <div class="relative" x-data="{open:false}">
+            <button type="button" class="hover:text-esprit-red inline-flex items-center gap-1" @click="open=!open" aria-haspopup="true" :aria-expanded="open.toString()">
+              Carrières <span class="text-gray-500">▾</span>
             </button>
-            <div id="careersDropdown" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-xl shadow border border-gray-200 w-56">
-              <ul class="py-2 text-sm text-gray-700" aria-labelledby="careersDropdownButton">
-                <li><a href="/careers/opportunities/" class="block px-4 py-2 hover:bg-esprit-red/10">Opportunités</a></li>
-                {% if current_user and current_user.is_authenticated and current_user.role|lower != 'admin' %}
-                <li><a href="/careers/applications/" class="block px-4 py-2 hover:bg-esprit-red/10">Mes candidatures</a></li>
-                {% endif %}
-                {% if current_user and current_user.is_authenticated and current_user.role|lower == 'admin' %}
-                <li><a href="/careers/opportunities/create/" class="block px-4 py-2 hover:bg-esprit-red/10">Créer une opportunité</a></li>
-                {% endif %}
-              </ul>
+            <div x-cloak x-show="open" x-transition.opacity.scale.origin.top @click.outside="open=false" class="absolute mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow z-50">
+              <a href="/careers/opportunities/" class="block px-4 py-2 hover:bg-gray-50">Opportunités</a>
+              {% if current_user and current_user.is_authenticated and current_user.role|lower != 'admin' %}
+                <a href="/careers/applications/" class="block px-4 py-2 hover:bg-gray-50">Mes candidatures</a>
+              {% endif %}
             </div>
           </div>
+          {% endif %}
           <a href="/events/" class="hover:text-esprit-red">Actualités</a>
           <a href="/library/" class="hover:text-esprit-red">Bibliothèque</a>
         </nav>
@@ -101,8 +97,8 @@
     </header>
 
     {% if current_user and current_user.is_authenticated and current_user.role == 'Admin' %}
-    <div x-show="sidebarOpen" class="md:hidden fixed inset-0 z-40 bg-black/40" @click="sidebarOpen=false"></div>
-    <aside x-show="sidebarOpen" class="md:hidden fixed top-0 left-0 bottom-0 w-72 bg-white shadow-lg z-50 p-6" @click.stop>
+    <div x-cloak x-show="sidebarOpen" class="md:hidden fixed inset-0 z-40 bg-black/40" @click="sidebarOpen=false"></div>
+    <aside x-cloak x-show="sidebarOpen" class="md:hidden fixed top-0 left-0 bottom-0 w-72 bg-white shadow-lg z-50 p-6" @click.stop>
       {% include 'partials/sidebar.html' %}
     </aside>
     {% endif %}

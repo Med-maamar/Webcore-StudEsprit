@@ -21,6 +21,13 @@ from .views import (
     MyApplicationsPageView,
     InterviewPrepHTMLView,
     InterviewPrepDeleteView,
+    # Admin
+    AdminApplicationsListView,
+    AdminApplicationDetailView,
+    AdminApplicationInterviewView,
+    AdminInterviewUpdateView,
+    AdminInterviewDeleteView,
+    AdminApplicationValidateView,
 )
 
 
@@ -60,4 +67,11 @@ urlpatterns = [
     path("careers/applications/<str:pk>/interview-prep/delete/", InterviewPrepDeleteView.as_view(), name="application-interview-prep-delete"),
     path("careers/profile/", CVProfilePageView.as_view(), name="profile"),
     path("careers/profile/analyze/", ProfileGapAnalysisView.as_view(), name="profile-gap"),
+    # Admin careers
+    path("admin/careers/applications/", AdminApplicationsListView.as_view(), name="admin-applications"),
+    path("admin/careers/applications/<str:pk>/", AdminApplicationDetailView.as_view(), name="admin-application-detail"),
+    path("admin/careers/applications/<str:pk>/interview/", AdminApplicationInterviewView.as_view(), name="admin-application-interview"),
+    path("admin/careers/interviews/<str:pk>/", AdminInterviewUpdateView.as_view(), name="admin-interview-update"),
+    path("admin/careers/interviews/<str:pk>/delete/", AdminInterviewDeleteView.as_view(), name="admin-interview-delete"),
+    path("admin/careers/applications/<str:pk>/validate/", AdminApplicationValidateView.as_view(), name="admin-application-validate"),
 ]

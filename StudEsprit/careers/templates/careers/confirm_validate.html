@@ -1,0 +1,10 @@
+<div class="space-y-3">
+  <p class="text-gray-700">Confirmez-vous la validation de cet(te) étudiant(e) et la désactivation de l'opportunité associée ?</p>
+  <form hx-post="{% url 'careers:admin-application-validate' app.id %}" hx-target="#admin-modal-content" hx-swap="innerHTML">
+    {% csrf_token %}
+    <div class="flex justify-end gap-2">
+      <button type="button" class="px-4 py-2 border rounded text-gray-600" onclick="document.getElementById('admin-modal').classList.add('hidden')">Annuler</button>
+      <button type="submit" class="px-4 py-2 rounded bg-esprit-red text-white">Valider</button>
+    </div>
+  </form>
+</div>

@@ -289,6 +289,48 @@ class CareerAIService:
         # Pas de fallback si Gemini indisponible
         return {}
 
+    def suggest_interview_questions(self, job_desc: str, candidate_skills: Optional[List[str]] = None) -> List[str]:
+        """Return ~5 targeted interview questions for admins.
+
+        Uses Gemini if configured; otherwise returns simple heuristics.
+        """
+        try:
+            _genai = _get_genai_client()
+            if _genai is None:
+                raise RuntimeError("Gemini indisponible")
+            picked = _pick_gemini_model(_genai)
+            model = _genai.GenerativeModel(picked)
+            skills = ", ".join(candidate_skills or [])
+            prompt = (
+                "En français, propose 5 questions d'entretien ciblées et difficiles "
+                "liées à la description de poste ci‑dessous. Réponds au format JSON: {\"questions\":[string,...]}\n\n"
+                f"Description:\n{job_desc}\n\nCompétences du candidat: {skills}"
+            )
+            resp = model.generate_content(prompt)
+            text = getattr(resp, "text", "") or ""
+            if "{" in text and "}" in text:
+                import json as _json
+                try:
+                    data = _json.loads(text[text.find("{") : text.rfind("}") + 1])
+                    qs = data.get("questions") or []
+                    return [q for q in qs if isinstance(q, str)][:5]
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        # Fallback static shaping
+        ks = list((candidate_skills or [])[:3])
+        base = [
+            "Décrivez un incident majeur que vous avez résolu et comment vous l'avez diagnostiqué.",
+            "Expliquez un choix d'architecture récent et les compromis que vous avez évalués.",
+            "Comment mesureriez‑vous l'impact d'une optimisation de performance ?",
+            "Donnez un exemple de revue de code ayant amélioré sensiblement la fiabilité.",
+            "Quelles seraient vos priorités pour vos 30 premiers jours ?",
+        ]
+        if ks:
+            base[0] = f"Expliquez un incident résolu impliquant {ks[0]} et votre démarche de diagnostic."
+        return base[:5]
+
 
 def _extract_snippet(text: Optional[str], keywords: List[str]) -> str:
     if not text:
