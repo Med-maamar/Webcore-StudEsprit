@@ -52,6 +52,9 @@ from library.models import DocumentService, EmbeddingService
 
 logger = logging.getLogger(__name__)
 
+import json
+import math
+
 # Global model instance for embeddings
 _embedding_model = None
 
@@ -261,37 +264,96 @@ class AIService:
         """
         Generate a concise summary of the document content.
         """
+        # New structured summary for students. Limit by approximate reading time (minutes)
+        reading_minutes = 5
         try:
+            # Determine approximate max words for requested reading time
+            max_words = reading_minutes * 200  # ~200 wpm
+
             if not OPENAI_AVAILABLE or not hasattr(settings, 'OPENAI_API_KEY') or not settings.OPENAI_API_KEY:
-                return AIService._generate_fallback_summary(content, max_length)
-            
+                # Fallback: create a structured summary using simple heuristics
+                return AIService._generate_structured_fallback_summary(content, reading_minutes)
+
             openai.api_key = settings.OPENAI_API_KEY
-            
-            # Truncate content if too long
-            if len(content) > 4000:
-                content = content[:4000] + "..."
-            
+
+            # Truncate content to a reasonable context window for the model
+            if len(content) > 12000:
+                content = content[:12000] + "..."
+
+            prompt_system = (
+                "You are an expert assistant that creates concise, professional study summaries for university students. "
+                "Produce a structured summary with these sections: Title (very short), Key Concepts (3-6 bullet points), "
+                "Definitions (3-6 short definitions), Examples (2-4 short examples), Study Tips (4-6 actionable tips), and a short Summary paragraph. "
+                "Keep the whole output suitable to be read in approximately 5 minutes (~200-1000 words). Be precise and do not hallucinate facts not in the source."
+            )
+
+            prompt_user = (
+                "Document content:\n" + content +
+                "\n\nReturn the result in JSON with keys: title, key_concepts (list), definitions (list of objects with keys term and definition), examples (list), study_tips (list), summary (string)."
+            )
+
+            # Allow enough tokens for the structured output
+            max_tokens = min(1500, max_words * 2)
+
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {
-                        "role": "system",
-                        "content": f"Generate a concise summary of the following document content in {max_length} characters or less. Focus on key points, main topics, and important information."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Document content:\n{content}"
-                    }
+                    {"role": "system", "content": prompt_system},
+                    {"role": "user", "content": prompt_user}
                 ],
-                max_tokens=200,
-                temperature=0.7
+                max_tokens=max_tokens,
+                temperature=0.3
             )
-            
-            return response.choices[0].message.content.strip()
-            
+
+            raw = response.choices[0].message.content.strip()
+
+            # Try to parse JSON from the model. If it fails, treat raw text as plain summary.
+            try:
+                parsed = json.loads(raw)
+                # Build a friendly text output for backwards compatibility
+                out_lines = []
+                if parsed.get('title'):
+                    out_lines.append(parsed['title'])
+                    out_lines.append('')
+
+                if parsed.get('key_concepts'):
+                    out_lines.append('Key Concepts:')
+                    for kc in parsed['key_concepts']:
+                        out_lines.append(f"- {kc}")
+                    out_lines.append('')
+
+                if parsed.get('definitions'):
+                    out_lines.append('Definitions:')
+                    for d in parsed['definitions']:
+                        term = d.get('term') if isinstance(d, dict) else (d[0] if isinstance(d, (list,tuple)) and len(d)>0 else '')
+                        definition = d.get('definition') if isinstance(d, dict) else (d[1] if isinstance(d, (list,tuple)) and len(d)>1 else str(d))
+                        out_lines.append(f"- {term}: {definition}")
+                    out_lines.append('')
+
+                if parsed.get('examples'):
+                    out_lines.append('Examples:')
+                    for ex in parsed['examples']:
+                        out_lines.append(f"- {ex}")
+                    out_lines.append('')
+
+                if parsed.get('study_tips'):
+                    out_lines.append('Study Tips:')
+                    for tip in parsed['study_tips']:
+                        out_lines.append(f"- {tip}")
+                    out_lines.append('')
+
+                if parsed.get('summary'):
+                    out_lines.append('Summary:')
+                    out_lines.append(parsed['summary'])
+
+                return '\n'.join(out_lines)
+            except Exception:
+                # If JSON parse fails, return raw text but keep it concise
+                return raw
+
         except Exception as e:
             logger.error(f"Error generating document summary: {e}")
-            return AIService._generate_fallback_summary(content, max_length)
+            return AIService._generate_structured_fallback_summary(content, reading_minutes)
     
     @staticmethod
     def generate_qa_pairs(content: str, num_questions: int = 5) -> List[Dict[str, str]]:
@@ -299,38 +361,112 @@ class AIService:
         Generate question-answer pairs from document content.
         """
         try:
-            if not OPENAI_AVAILABLE or not hasattr(settings, 'OPENAI_API_KEY') or not settings.OPENAI_API_KEY:
+            # Split into paragraphs and compute embeddings to find important paragraphs
+            paragraphs = PDFProcessor.split_text_into_paragraphs(content, min_length=80, max_length=1200)
+
+            if not paragraphs:
                 return AIService._generate_fallback_qa_pairs(content, num_questions)
-            
+
+            # Generate embeddings for paragraphs (may fallback)
+            para_embeddings = EmbeddingProcessor.generate_embeddings(paragraphs)
+
+            # Compute centrality score using cosine similarity to other paragraphs
+            scores = [0.0] * len(para_embeddings)
+            try:
+                if SKLEARN_AVAILABLE:
+                    # sklearn's cosine_similarity expects 2D arrays
+                    sims = cosine_similarity(para_embeddings)
+                    for i in range(len(sims)):
+                        scores[i] = float(sims[i].sum())
+                elif NUMPY_AVAILABLE:
+                    import numpy as _np
+                    embs = _np.array(para_embeddings)
+                    norms = _np.linalg.norm(embs, axis=1, keepdims=True)
+                    norms[norms==0] = 1.0
+                    embs_norm = embs / norms
+                    sims = embs_norm.dot(embs_norm.T)
+                    for i in range(sims.shape[0]):
+                        scores[i] = float(sims[i].sum())
+                else:
+                    # No efficient similarity lib — fallback to paragraph length heuristic
+                    for i, p in enumerate(paragraphs):
+                        scores[i] = len(p)
+            except Exception as e:
+                logger.warning(f"Embedding similarity failed, falling back to length heuristic: {e}")
+                for i, p in enumerate(paragraphs):
+                    scores[i] = len(p)
+
+            # Select top paragraphs by score (avoid duplicates)
+            idxs = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
+            selected_idxs = idxs[:min(len(idxs), num_questions * 2)]  # take extra to allow diverse q types
+
+            # Prepare a compact context made of selected paragraphs
+            context_parts = []
+            references = {}
+            for rank, i in enumerate(selected_idxs):
+                snippet = paragraphs[i]
+                context_parts.append(f"Paragraph {i+1}: {snippet}")
+                references[i] = snippet
+
+            compact_context = "\n\n".join(context_parts)
+
+            if not OPENAI_AVAILABLE or not hasattr(settings, 'OPENAI_API_KEY') or not settings.OPENAI_API_KEY:
+                # Fallback structured generation using paragraphs
+                return AIService._generate_structured_fallback_qa(paragraphs, num_questions)
+
             openai.api_key = settings.OPENAI_API_KEY
-            
-            # Truncate content if too long
-            if len(content) > 3000:
-                content = content[:3000] + "..."
-            
-            response = openai.ChatCompletion.create(
+
+            # Ask the model to generate a mixture of MCQ, TF, short answer with difficulty and references
+            system_prompt = (
+                "You are an educational content creator. From the provided document paragraphs, generate exam-style questions. "
+                "Only produce multiple-choice (mcq) and true/false (tf) questions. Do NOT produce short-answer questions. "
+                "For each question include: type (mcq/tf), difficulty (easy/medium/hard), question, options (for mcq), answer, and reference (paragraph number). "
+                "Ensure questions are directly supported by the referenced paragraph and are professional and clear. Return valid JSON list."
+            )
+
+            user_prompt = f"Document excerpts:\n{compact_context}\n\nGenerate {num_questions} questions as described. Return JSON array of objects with keys: type,difficulty,question,options,answer,reference."
+
+            resp = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {
-                        "role": "system",
-                        "content": f"Generate {num_questions} question-answer pairs based on the document content. Return them in JSON format: [{{\"question\": \"...\", \"answer\": \"...\"}}]"
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Document content:\n{content}"
-                    }
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=800,
-                temperature=0.7
+                max_tokens=1200,
+                temperature=0.2
             )
-            
-            import json
-            qa_pairs = json.loads(response.choices[0].message.content.strip())
-            return qa_pairs[:num_questions]
-            
+
+            raw = resp.choices[0].message.content.strip()
+            try:
+                generated = json.loads(raw)
+                # Normalize and ensure fields
+                out = []
+                for q in generated[:num_questions]:
+                    qtype = q.get('type', 'tf')
+                    difficulty = q.get('difficulty', 'medium')
+                    question_text = q.get('question', '').strip()
+                    options = q.get('options') if isinstance(q.get('options'), list) else []
+                    answer = q.get('answer', '')
+                    reference = q.get('reference', '')
+                    if qtype not in ['mcq', 'tf']:
+                        qtype = 'tf'
+                        options = []
+                    out.append({
+                        'type': qtype,
+                        'difficulty': difficulty,
+                        'question': question_text,
+                        'options': options,
+                        'answer': answer,
+                        'reference': reference
+                    })
+                return out
+            except Exception:
+                logger.error('Failed to parse QA JSON from model, falling back to simple QA')
+                return AIService._generate_structured_fallback_qa(paragraphs, num_questions)
+
         except Exception as e:
             logger.error(f"Error generating QA pairs: {e}")
-            return AIService._generate_fallback_qa_pairs(content, num_questions)
+            return AIService._generate_structured_fallback_qa(PDFProcessor.split_text_into_paragraphs(content), num_questions)
     
     @staticmethod
     def analyze_document_structure(content: str) -> Dict[str, Any]:
@@ -357,15 +493,30 @@ class AIService:
                     potential_headings.append(line)
             
             # Extract key topics (simple keyword extraction)
-            words = content.lower().split()
+            words = [w for w in re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ']+", content.lower())]
             word_freq = {}
             for word in words:
-                if len(word) > 4 and word.isalpha():
+                if len(word) > 4:
                     word_freq[word] = word_freq.get(word, 0) + 1
-            
+
             # Get top 10 most frequent words
             top_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:10]
-            
+
+            # Additional readability and richness metrics
+            unique_words = set(words)
+            unique_ratio = round((len(unique_words) / max(1, len(words))) * 100, 1)
+            avg_sentence_len = round((len(content.split()) / max(1, sentence_count)), 1)
+
+            # Approximate Flesch-Kincaid Grade Level (very rough, language-agnostic heuristic)
+            syllables = sum(len(re.findall(r"[aeiouyàâäéèêëîïôöùûüÿAEIOUY]", w)) for w in words)
+            words_count = max(1, len(words))
+            fk_grade = round(0.39 * (words_count / max(1, sentence_count)) + 11.8 * (syllables / words_count) - 15.59, 1)
+
+            # Heuristics: counts of figures/tables/references
+            figures = len(re.findall(r"figure\s+\d+|fig\.\s*\d+", content, flags=re.IGNORECASE))
+            tables = len(re.findall(r"table\s+\d+", content, flags=re.IGNORECASE))
+            references = len(re.findall(r"\[(?:\d+|[A-Za-z]+\s\d{4})\]", content))
+
             return {
                 "word_count": word_count,
                 "paragraph_count": paragraph_count,
@@ -373,7 +524,14 @@ class AIService:
                 "potential_headings": potential_headings[:10],
                 "top_keywords": [word for word, freq in top_words],
                 "reading_time_minutes": max(1, word_count // 200),  # Average reading speed
-                "complexity_score": min(100, (sentence_count / max(1, paragraph_count)) * 10)
+                "complexity_score": min(100, (sentence_count / max(1, paragraph_count)) * 10),
+                # Enriched metrics
+                "unique_word_ratio_percent": unique_ratio,
+                "avg_sentence_length": avg_sentence_len,
+                "readability_grade_fk": fk_grade,
+                "figures_count": figures,
+                "tables_count": tables,
+                "references_markers": references
             }
             
         except Exception as e:
@@ -418,6 +576,120 @@ class AIService:
                 })
         
         return qa_pairs
+
+    @staticmethod
+    def _generate_structured_fallback_summary(content: str, reading_minutes: int = 5) -> str:
+        """Create a simple structured summary when no AI model is available.
+
+        Sections: Title, Key Concepts, Definitions, Examples, Study Tips, Summary
+        """
+        try:
+            max_words = reading_minutes * 200
+            # Simple sentence splitting
+            sentences = [s.strip() for s in re.split(r'[\n\.\?\!]+', content) if s.strip()]
+            title = sentences[0] if sentences else 'Résumé du document'
+
+            # Keyword extraction (naive)
+            words = re.findall(r"\b[a-zA-Z]{5,}\b", content.lower())
+            freq = {}
+            for w in words:
+                freq[w] = freq.get(w, 0) + 1
+            top_words = [w for w, _ in sorted(freq.items(), key=lambda x: x[1], reverse=True)[:6]]
+
+            key_concepts = top_words[:6]
+
+            # Definitions: pick sentences that contain top words
+            definitions = []
+            for w in key_concepts:
+                found = next((s for s in sentences if w in s.lower()), '')
+                definitions.append({'term': w, 'definition': (found[:180] + '...') if found else 'Definition not available in text.'})
+
+            # Examples: look for sentences with the word "example" or take two short sentences
+            examples = [s for s in sentences if 'example' in s.lower()][:2]
+            if len(examples) < 2:
+                examples += sentences[1:3]
+
+            # Study tips: generic actionable tips
+            study_tips = [
+                'Read the Key Concepts and try to explain them in your own words.',
+                'Make flashcards for the Definitions and important terms.',
+                'Solve practice problems related to the Examples.',
+                'Review the Summary and test yourself after 24 hours.'
+            ]
+
+            # Compact summary: join first few sentences up to max_words
+            summary_sentences = sentences[:6]
+            summary = '. '.join(summary_sentences).strip()
+
+            out_lines = []
+            out_lines.append(title)
+            out_lines.append('')
+            out_lines.append('Key Concepts:')
+            for kc in key_concepts:
+                out_lines.append(f"- {kc}")
+            out_lines.append('')
+            out_lines.append('Definitions:')
+            for d in definitions:
+                out_lines.append(f"- {d['term']}: {d['definition']}")
+            out_lines.append('')
+            out_lines.append('Examples:')
+            for ex in examples:
+                out_lines.append(f"- {ex}")
+            out_lines.append('')
+            out_lines.append('Study Tips:')
+            for tip in study_tips:
+                out_lines.append(f"- {tip}")
+            out_lines.append('')
+            out_lines.append('Summary:')
+            out_lines.append(summary)
+
+            return '\n'.join(out_lines)
+        except Exception as e:
+            logger.error(f"Fallback structured summary failed: {e}")
+            return AIService._generate_fallback_summary(content, 500)
+
+    @staticmethod
+    def _generate_structured_fallback_qa(paragraphs: List[str], num_questions: int = 5) -> List[Dict[str, Any]]:
+        """Generate basic structured QA (mcq/tf only) using paragraphs when no AI is available."""
+        out = []
+        try:
+            # Alternate mcq and tf
+            types = ['mcq', 'tf']
+            p_count = len(paragraphs)
+            for i in range(min(num_questions, p_count)):
+                para = paragraphs[i]
+                qtype = types[i % len(types)]
+                difficulty = 'easy' if i < num_questions/3 else ('medium' if i < 2*num_questions/3 else 'hard')
+                reference = f'Paragraph {i+1}'
+
+                if qtype == 'mcq':
+                    # Create a question from the first sentence
+                    first_sent = para.split('.')[0][:200]
+                    question = f"Which of the following is true based on: {first_sent}?"
+                    # naive options: correct is first sentence summary, others are shuffled snippets
+                    opts = [first_sent]
+                    # create distractors from other paragraphs if available
+                    j = i+1
+                    while len(opts) < 4 and j < p_count:
+                        opts.append(paragraphs[j].split('.')[0][:200])
+                        j += 1
+                    # pad if needed
+                    while len(opts) < 4:
+                        opts.append('None of the above')
+                    answer = opts[0]
+                    out.append({'type': 'mcq', 'difficulty': difficulty, 'question': question, 'options': opts, 'answer': answer, 'reference': reference})
+
+                else:  # tf
+                    sent = para.split('.')[0][:200]
+                    # create a true statement
+                    question = f"True or False: {sent}."
+                    answer = 'True'
+                    out.append({'type': 'tf', 'difficulty': difficulty, 'question': question, 'options': [], 'answer': answer, 'reference': reference})
+
+            return out[:num_questions]
+        except Exception as e:
+            logger.error(f"Fallback structured QA failed: {e}")
+            return []
     
     @staticmethod
     def _generate_openai_response(
