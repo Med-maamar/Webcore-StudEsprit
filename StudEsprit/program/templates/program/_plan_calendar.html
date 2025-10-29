@@ -1,0 +1,53 @@
+{% comment %}
+Simple calendar partial to display the generated plan. The real generator will
+return a structure with `plan_days` (list of (day, [{hour, matiere}...])) and
+`plan_summary` (list of matiere summaries). This partial is intentionally
+lightweight so it can render a useful preview while the ML generator is
+implemented.
+{% endcomment %}
+
+{% if plan.error %}
+  <div class="p-4 bg-red-50 border border-red-200 rounded">
+    <strong class="text-red-800">Erreur :</strong>
+    <div class="text-sm text-red-700 mt-1">{{ plan.error }}</div>
+  </div>
+{% else %}
+  <div class="mt-4 bg-white rounded-lg border p-4 overflow-auto">
+    {# Full hourly grid: first column shows hour, then one column per day #}
+    <div class="min-w-full">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr>
+            <th class="border p-2 bg-gray-50 text-left" style="width:64px">Heures</th>
+            {% for day in day_labels %}
+              <th class="border p-2 bg-gray-50 text-left">{% if day == 'Mon' %}Lundi{% elif day == 'Tue' %}Mardi{% elif day == 'Wed' %}Mercredi{% elif day == 'Thu' %}Jeudi{% elif day == 'Fri' %}Vendredi{% elif day == 'Sat' %}Samedi{% else %}Dimanche{% endif %}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for h, cells in calendar_rows %}
+            <tr>
+              <td class="border p-2 align-top text-xs text-gray-600">{{ h }}h</td>
+              {% for dcell in cells %}
+                {% comment %} dcell is the per-day cell for this hour {% endcomment %}
+                <td class="border p-2 align-top" style="min-width:140px; vertical-align:top">
+                  {% if dcell.unavailable %}
+                    <div class="px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-700">Non disponible</div>
+                  {% elif dcell.matiere %}
+                    {% if dcell.bg %}
+                      <div class="px-2 py-1 rounded text-xs font-medium" style="background: {{ dcell.bg }}; color: {{ dcell.color|default:'#083344' }}">{{ dcell.matiere.nom }}</div>
+                    {% else %}
+                      <div class="px-2 py-1 rounded text-xs font-medium bg-green-500 text-white">{{ dcell.matiere.nom }}</div>
+                    {% endif %}
+                  {% else %}
+                    <div class="text-xs text-gray-400">&mdash;</div>
+                  {% endif %}
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endif %}

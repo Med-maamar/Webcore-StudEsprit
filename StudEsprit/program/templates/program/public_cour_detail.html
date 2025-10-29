@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="bg-white rounded-2xl shadow border border-gray-200 p-6">
+  <div class="flex items-start justify-between gap-6">
+    <div class="flex-1">
+      <div class="flex items-start justify-between gap-6">
+        <div class="flex-1">
+          <h1 class="text-2xl font-bold">{{ cour.nom }}</h1>
+          {% if cour.description %}
+            <p class="text-sm text-gray-600 mt-2">{{ cour.description }}</p>
+          {% endif %}
+        </div>
+
+        <aside class="w-72 shrink-0">
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="text-sm font-semibold mb-2">Ressources</h3>
+            <ul class="space-y-2 text-sm">
+              <li>Matière: {% if matiere %}{{ matiere.nom }}{% else %}{{ cour.matiere_nom|default:'—' }}{% endif %}</li>
+              <li>Chapitre: {% if cour.chapter %}{{ cour.chapter }}{% elif cour.coefficient %}{{ cour.coefficient }}{% else %}—{% endif %}</li>
+              <li>Tests générés: {% if tests_exist %}Oui{% else %}Non{% endif %}</li>
+              <li>Résumé: {% if summary %}Disponible{% else %}Aucun{% endif %}</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+
+      <div class="mt-4 space-x-2">
+        <!-- HTMX buttons to swap the PDF area with test/summary content -->
+        <button hx-get="{% url 'cour_view_test' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" 
+                class="px-3 py-1 rounded-md bg-emerald-600 text-white text-xs hover:bg-emerald-700 transition">
+          👁️ Voir test
+        </button>
+
+        <button hx-get="{% url 'cour_view_summary' c.id %}" hx-target="#cours-modal" hx-swap="innerHTML" 
+                class="px-3 py-1 rounded-md bg-teal-600 text-white text-xs hover:bg-teal-700 transition">
+          👁️ Voir résumé
+        </button>
+
+      </div>
+
+      <div id="cour-content" class="mt-6">
+        {% include 'program/_cours_pdf_partial.html' %}
+      </div>
+      <!-- HTMX swap target for modal-like content (tests / summary when using admin-style endpoints) -->
+      <div id="cours-modal" class="mt-4"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

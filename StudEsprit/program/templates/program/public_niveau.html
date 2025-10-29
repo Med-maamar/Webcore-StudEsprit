@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="bg-white rounded-2xl shadow border border-gray-200 p-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold">{{ niveau.nom }}</h1>
+      {% if niveau.description %}
+        <p class="text-sm text-gray-600">{{ niveau.description }}</p>
+      {% endif %}
+    </div>
+    <div>
+      <a href="{% url 'program_public_index' %}" class="text-sm text-esprit-red">&larr; Retour aux niveaux</a>
+    </div>
+  </div>
+
+  <hr class="my-4" />
+  <form method="get" class="mb-4">
+    <div class="flex flex-wrap gap-2 items-center">
+      <input name="q" value="{{ q|default:'' }}" placeholder="Rechercher une matière..." class="px-3 py-2 rounded-xl border border-gray-300" />
+      <input name="coef" type="number" step="0.1" value="{{ coef|default:'' }}" placeholder="Coef" class="px-3 py-2 rounded-xl border border-gray-300 w-24" />
+      <button type="submit" class="px-3 py-2 bg-esprit-red text-white rounded-xl">Filtrer</button>
+      <a href="{% url 'program_public_niveau' niveau.id %}" class="px-3 py-2 border rounded-xl">Réinitialiser</a>
+      <!-- Generate study plan button (HTMX): first show availability labeling form -->
+      <button
+        hx-post="{% url 'program_public_generate_plan_pre' niveau.id %}"
+        hx-target="#plan-area"
+        hx-swap="innerHTML"
+        class="px-3 py-2 bg-blue-600 text-white rounded-xl"
+      >Générer planning</button>
+    </div>
+  </form>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for m in matieres %}
+      <a href="{% url 'program_public_matiere' m.id %}" class="block">
+        <div class="p-4 rounded-lg border border-gray-100 hover:shadow-md transition bg-white">
+          <div class="text-lg font-semibold">{{ m.nom }}</div>
+          <div class="text-xs text-gray-500 mt-2">Coef: <span class="font-medium">{% if m.coefficient %}{{ m.coefficient }}{% else %}&mdash;{% endif %}</span></div>
+          {% if m.description %}
+            <div class="text-sm text-gray-500 mt-1">{{ m.description|truncatechars:120 }}</div>
+          {% endif %}
+        </div>
+      </a>
+    {% empty %}
+      <p>Aucune matière trouvée pour ce niveau.</p>
+    {% endfor %}
+  </div>
+  <!-- Plan area will be swapped by HTMX -->
+  <div id="plan-area" class="mt-4"></div>
+</div>
+{% endblock %}

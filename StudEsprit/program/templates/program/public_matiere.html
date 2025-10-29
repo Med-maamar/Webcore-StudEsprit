@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="bg-white rounded-2xl shadow border border-gray-200 p-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold">{{ matiere.nom }}</h1>
+      {% if matiere.description %}
+        <p class="text-sm text-gray-600">{{ matiere.description }}</p>
+      {% endif %}
+      <div class="text-sm text-gray-600">Coefficient: <span class="font-medium">{% if matiere.coefficient %}{{ matiere.coefficient }}{% else %}&mdash;{% endif %}</span></div>
+    </div>
+    <div>
+      <a href="{% url 'program_public_niveau' matiere.niveau_id %}" class="text-sm text-esprit-red">&larr; Retour aux matières</a>
+    </div>
+  </div>
+
+  <hr class="my-4" />
+  <form method="get" class="mb-4">
+    <div class="flex gap-2 items-center flex-wrap">
+      <input name="q" value="{{ q|default:'' }}" placeholder="Rechercher un cours..." class="px-3 py-2 rounded-xl border border-gray-300" />
+      <label class="inline-flex items-center gap-2 text-sm">
+        <input type="checkbox" name="has_test" value="1" {% if has_test == '1' or has_test == 'true' or has_test == 'on' %}checked{% endif %} />
+        <span>Avec test</span>
+      </label>
+      <label class="inline-flex items-center gap-2 text-sm">
+        <input type="checkbox" name="has_summary" value="1" {% if has_summary == '1' or has_summary == 'true' or has_summary == 'on' %}checked{% endif %} />
+        <span>Avec résumé</span>
+      </label>
+      <button type="submit" class="px-3 py-2 bg-esprit-red text-white rounded-xl">Filtrer</button>
+      <a href="{% url 'program_public_matiere' matiere.id %}" class="px-3 py-2 border rounded-xl">Réinitialiser</a>
+    </div>
+  </form>
+
+  <div class="space-y-2">
+    {% for c in cours %}
+      <div class="p-3 border border-gray-100 rounded-lg bg-white flex items-center justify-between">
+        <div class="text-sm font-medium">{{ c.nom }}</div>
+        <div>
+          <a href="{% url 'program_public_cour_detail' c.id %}" class="text-sm text-esprit-red">Voir</a>
+        </div>
+      </div>
+    {% empty %}
+      <p>Aucun cours pour cette matière.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
