@@ -31,11 +31,23 @@ def create_niveau(nom: str, description: str) -> Dict[str, Any]:
 
 def get_niveau(niveau_id) -> Optional[Dict[str, Any]]:
     db = get_db()
+    # Be tolerant with id shapes: try ObjectId, string _id, or 'id' field
+    candidates = []
     try:
         oid = ObjectId(niveau_id)
+        candidates.append({"_id": oid})
     except Exception:
-        oid = niveau_id
-    return db[COLLECTION_NAME].find_one({"_id": oid})
+        pass
+    candidates.append({"_id": niveau_id})
+    candidates.append({"id": niveau_id})
+    try:
+        return db[COLLECTION_NAME].find_one({"$or": candidates})
+    except Exception:
+        # fallback to original behavior
+        try:
+            return db[COLLECTION_NAME].find_one({"_id": niveau_id})
+        except Exception:
+            return None
 
 
 def list_niveaux(q: Optional[str] = None, limit: int = 100, skip: int = 0) -> List[Dict[str, Any]]:
@@ -119,7 +131,7 @@ def delete_niveau(niveau_id) -> bool:
 MATIERE_COLLECTION = "matieres"
 
 
-def create_matiere(nom: str, description: str, niveau_id) -> Dict[str, Any]:
+def create_matiere(nom: str, description: str, niveau_id, coefficient: float = None) -> Dict[str, Any]:
     db = get_db()
     doc = {
         "nom": nom,
@@ -127,6 +139,12 @@ def create_matiere(nom: str, description: str, niveau_id) -> Dict[str, Any]:
         "niveau_id": niveau_id,
         "created_at": datetime.utcnow(),
     }
+    # store coefficient on matiere when provided (backwards compatible)
+    if coefficient is not None:
+        try:
+            doc['coefficient'] = float(coefficient)
+        except Exception:
+            doc['coefficient'] = coefficient
     result = db[MATIERE_COLLECTION].insert_one(doc)
     doc["_id"] = result.inserted_id
     doc["id"] = str(result.inserted_id)
@@ -135,11 +153,23 @@ def create_matiere(nom: str, description: str, niveau_id) -> Dict[str, Any]:
 
 def get_matiere(matiere_id) -> Optional[Dict[str, Any]]:
     db = get_db()
+    # Accept several id shapes: ObjectId, string _id, or stored `id` field
+    candidates = []
     try:
         oid = ObjectId(matiere_id)
+        candidates.append({"_id": oid})
     except Exception:
-        oid = matiere_id
-    return db[MATIERE_COLLECTION].find_one({"_id": oid})
+        pass
+    candidates.append({"_id": matiere_id})
+    candidates.append({"id": matiere_id})
+    try:
+        return db[MATIERE_COLLECTION].find_one({"$or": candidates})
+    except Exception:
+        # fallback: try simplest lookup
+        try:
+            return db[MATIERE_COLLECTION].find_one({"_id": matiere_id})
+        except Exception:
+            return None
 
 
 def list_matieres(q: Optional[str] = None, niveau_id=None, limit: int = 100, skip: int = 0) -> List[Dict[str, Any]]:
@@ -225,11 +255,22 @@ def create_cour(nom: str, description: str, coefficient: float, matiere_id, cour
 
 def get_cour(cour_id) -> Optional[Dict[str, Any]]:
     db = get_db()
+    # Accept ObjectId or string id forms
+    candidates = []
     try:
         oid = ObjectId(cour_id)
+        candidates.append({"_id": oid})
     except Exception:
-        oid = cour_id
-    return db[COURS_COLLECTION].find_one({"_id": oid})
+        pass
+    candidates.append({"_id": cour_id})
+    candidates.append({"id": cour_id})
+    try:
+        return db[COURS_COLLECTION].find_one({"$or": candidates})
+    except Exception:
+        try:
+            return db[COURS_COLLECTION].find_one({"_id": cour_id})
+        except Exception:
+            return None
 
 
 def list_cours(q: Optional[str] = None, matiere_id=None, limit: int = 100, skip: int = 0) -> List[Dict[str, Any]]:

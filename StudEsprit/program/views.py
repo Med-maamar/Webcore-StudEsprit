@@ -6,6 +6,8 @@ from django.http import Http404
 from django.conf import settings
 from django.core.files.storage import default_storage
 import tempfile
+import json
+from typing import Any, Dict
 
 
 class NiveauForm(forms.Form):
@@ -17,6 +19,7 @@ class MatiereForm(forms.Form):
     nom = forms.CharField(max_length=200)
     description = forms.CharField(widget=forms.Textarea, required=False)
     niveau_id = forms.CharField(required=False)
+    coefficient = forms.FloatField(required=False)
 
 
 class CourForm(forms.Form):
@@ -52,207 +55,194 @@ def niveaux_panel(request: HttpRequest, created: bool = False):
     q = request.GET.get("q")
     try:
         page = int(request.GET.get("page", "1"))
-    except ValueError:
+    except Exception:
         page = 1
     try:
         page_size = int(request.GET.get("page_size", "20"))
-    except ValueError:
+    except Exception:
         page_size = 20
-    skip = (page - 1) * page_size
+    skip = max(0, (page - 1) * page_size)
     niveaux = services.list_niveaux(q=q, limit=page_size, skip=skip)
-    form = NiveauForm()
-    context = {"niveaux": niveaux, "form": form, "q": q or "", "page": page, "page_size": page_size, "created": created}
-    return render(request, "program/_niveaux_panel.html", context)
+    return render(request, "program/niveaux_panel.html", {"niveaux": niveaux, "created": created, "q": q or "", "page": page})
 
 
 def niveaux_partial(request: HttpRequest):
-    q = request.GET.get("q")
-    try:
-        page = int(request.GET.get("page", "1"))
-    except ValueError:
-        page = 1
-    try:
-        page_size = int(request.GET.get("page_size", "20"))
-    except ValueError:
-        page_size = 20
-    skip = (page - 1) * page_size
-    niveaux = services.list_niveaux(q=q, limit=page_size, skip=skip)
-    context = {"niveaux": niveaux, "q": q or "", "page": page, "page_size": page_size}
-    return render(request, "program/_niveaux_table.html", context)
+    """Backward-compatible wrapper used by urls.py for the HTMX partial endpoint.
+    Previously the view was named `niveaux_partial`; code now delegates to
+    `niveaux_panel` which returns the same partial content.
+    """
+    return niveaux_panel(request)
 
 
 def niveau_delete(request: HttpRequest, nid=None):
-    if request.method == "POST":
-        services.delete_niveau(nid)
+    """Delete a niveau and return the updated panel (POST) or panel otherwise."""
+    if request.method == 'POST':
+        try:
+            services.delete_niveau(nid)
+        except Exception:
+            pass
         return niveaux_panel(request)
     return niveaux_panel(request)
 
 
 def niveau_edit(request: HttpRequest, nid=None):
-    # GET returns form partial; POST updates and returns panel
-    if request.method == "POST":
-        # update
-        data = {"nom": request.POST.get("nom"), "description": request.POST.get("description")}
-        services.update_niveau(nid, data)
-        return niveaux_panel(request)
-    # GET: render partial form
     n = services.get_niveau(nid)
     if not n:
         raise Http404("Niveau not found")
-    form = NiveauForm(initial={"nom": n.get("nom"), "description": n.get("description")})
-    return render(request, "program/_niveaux_edit.html", {"form": form, "nid": nid})
+    if request.method == 'POST':
+        form = NiveauForm(request.POST)
+        if form.is_valid():
+            services.update_niveau(nid, {"nom": form.cleaned_data["nom"], "description": form.cleaned_data.get("description", "")})
+            if request.headers.get("Hx-Request") == "true":
+                return niveaux_panel(request, created=True)
+            return redirect("niveaux_list")
+    else:
+        form = NiveauForm(initial={"nom": n.get("nom"), "description": n.get("description")})
+    return render(request, "program/niveau_form.html", {"form": form, "nid": nid})
 
 
-# -- Matieres views
-def matieres_list(request):
-    niveaux = services.list_niveaux(limit=100)
-    return render(request, "program/matieres_list.html", {"niveaux": niveaux})
+def matieres_list(request: HttpRequest):
+    q = request.GET.get('q')
+    try:
+        matieres = services.list_matieres(q=q, limit=200)
+    except Exception:
+        matieres = services.list_matieres(limit=200)
+    # also provide niveaux for the filter select
+    try:
+        niveaux = services.list_niveaux(limit=200)
+    except Exception:
+        niveaux = services.list_niveaux()
+    return render(request, "program/matieres_list.html", {"matieres": matieres, "q": q or "", "niveaux": niveaux, "niveau_id": request.GET.get('niveau_id', '')})
 
 
-def matiere_create(request):
-    # Support normal navigation and HTMX partial replacement
-    if request.method == "POST":
+def matieres_partial(request: HttpRequest):
+    q = request.GET.get('q')
+    try:
+        matieres = services.list_matieres(q=q, limit=200)
+    except Exception:
+        matieres = services.list_matieres(limit=200)
+    # enrich matieres with niveau name for display
+    enriched = []
+    for m in matieres:
+        m_copy = dict(m)
+        try:
+            nid = m.get('niveau_id')
+            niveau = services.get_niveau(nid) if nid else None
+            m_copy['niveau_nom'] = niveau.get('nom') if niveau else ''
+        except Exception:
+            m_copy['niveau_nom'] = ''
+        enriched.append(m_copy)
+    return render(request, "program/_matieres_table.html", {"matieres": enriched, "q": q or ""})
+
+
+def matieres_panel(request: HttpRequest, created: bool = False):
+    q = request.GET.get('q')
+    try:
+        page = int(request.GET.get('page', '1'))
+    except Exception:
+        page = 1
+    try:
+        page_size = int(request.GET.get('page_size', '20'))
+    except Exception:
+        page_size = 20
+    skip = max(0, (page - 1) * page_size)
+    matieres = services.list_matieres(q=q, limit=page_size, skip=skip)
+    # attach niveau names for display in the table
+    enriched = []
+    for m in matieres:
+        m_copy = dict(m)
+        try:
+            nid = m.get('niveau_id')
+            niveau = services.get_niveau(nid) if nid else None
+            m_copy['niveau_nom'] = niveau.get('nom') if niveau else ''
+        except Exception:
+            m_copy['niveau_nom'] = ''
+        enriched.append(m_copy)
+    return render(request, "program/matieres_panel.html", {"matieres": enriched, "created": created, "q": q or "", "page": page})
+
+
+def matiere_create(request: HttpRequest):
+    if request.method == 'POST':
         form = MatiereForm(request.POST)
         if form.is_valid():
-            services.create_matiere(form.cleaned_data["nom"], form.cleaned_data["description"], form.cleaned_data.get("niveau_id") or None)
+            nom = form.cleaned_data["nom"]
+            desc = form.cleaned_data.get("description", "")
+            niveau_id = form.cleaned_data.get("niveau_id")
+            coef = form.cleaned_data.get("coefficient")
+            services.create_matiere(nom, desc, niveau_id, coefficient=coef)
             if request.headers.get("Hx-Request") == "true":
                 return matieres_panel(request, created=True)
             return redirect("matieres_list")
     else:
         form = MatiereForm()
-    # Provide niveaux for the standalone create page so the select shows options
     niveaux = services.list_niveaux(limit=200)
     return render(request, "program/matiere_form.html", {"form": form, "niveaux": niveaux})
 
 
-def matieres_panel(request: HttpRequest, created: bool = False):
-    q = request.GET.get("q")
-    try:
-        page = int(request.GET.get("page", "1"))
-    except ValueError:
-        page = 1
-    try:
-        page_size = int(request.GET.get("page_size", "20"))
-    except ValueError:
-        page_size = 20
-    skip = (page - 1) * page_size
-    niveau_id = request.GET.get("niveau_id")
-    matieres = services.list_matieres(q=q, niveau_id=niveau_id, limit=page_size, skip=skip)
-    niveaux = services.list_niveaux(limit=100)
-    # annotate matieres with niveau names for display
-    niveau_map = {n.get('id') or str(n.get('_id')): n.get('nom') for n in niveaux}
-    for m in matieres:
-        nid = m.get('niveau_id')
-        m['niveau_nom'] = niveau_map.get(nid, '') if nid else ''
-    form = MatiereForm()
-    context = {"matieres": matieres, "niveaux": niveaux, "form": form, "q": q or "", "page": page, "page_size": page_size, "created": created}
-    return render(request, "program/_matieres_panel.html", context)
-
-
-def matieres_partial(request: HttpRequest):
-    q = request.GET.get("q")
-    try:
-        page = int(request.GET.get("page", "1"))
-    except ValueError:
-        page = 1
-    try:
-        page_size = int(request.GET.get("page_size", "20"))
-    except ValueError:
-        page_size = 20
-    skip = (page - 1) * page_size
-    niveau_id = request.GET.get("niveau_id")
-    matieres = services.list_matieres(q=q, niveau_id=niveau_id, limit=page_size, skip=skip)
-    niveaux = services.list_niveaux(limit=100)
-    niveau_map = {n.get('id') or str(n.get('_id')): n.get('nom') for n in niveaux}
-    for m in matieres:
-        nid = m.get('niveau_id')
-        m['niveau_nom'] = niveau_map.get(nid, '') if nid else ''
-    context = {"matieres": matieres, "q": q or "", "page": page, "page_size": page_size}
-    return render(request, "program/_matieres_table.html", context)
-
-
 def matiere_delete(request: HttpRequest, mid=None):
-    if request.method == "POST":
-        services.delete_matiere(mid)
+    if request.method == 'POST':
+        try:
+            services.delete_matiere(mid)
+        except Exception:
+            pass
         return matieres_panel(request)
     return matieres_panel(request)
 
 
 def matiere_edit(request: HttpRequest, mid=None):
-    if request.method == "POST":
-        data = {"nom": request.POST.get("nom"), "description": request.POST.get("description"), "niveau_id": request.POST.get("niveau_id")}
-        services.update_matiere(mid, data)
-        return matieres_panel(request)
     m = services.get_matiere(mid)
     if not m:
-        raise Http404("Matiere not found")
+        raise Http404("Matière not found")
+    if request.method == 'POST':
+        form = MatiereForm(request.POST)
+        if form.is_valid():
+            data = {"nom": form.cleaned_data.get("nom"), "description": form.cleaned_data.get("description", ""), "coefficient": form.cleaned_data.get("coefficient")}
+            services.update_matiere(mid, data)
+            if request.headers.get("Hx-Request") == "true":
+                return matieres_panel(request, created=True)
+            return redirect("matieres_list")
+    else:
+        form = MatiereForm(initial={"nom": m.get("nom"), "description": m.get("description"), "niveau_id": m.get("niveau_id"), "coefficient": m.get("coefficient")})
     niveaux = services.list_niveaux(limit=200)
-    form = MatiereForm(initial={"nom": m.get("nom"), "description": m.get("description"), "niveau_id": m.get("niveau_id")})
-    return render(request, "program/_matieres_edit.html", {"form": form, "mid": mid, "niveaux": niveaux})
+    return render(request, "program/matiere_form.html", {"form": form, "mid": mid, "niveaux": niveaux})
 
 
-# -- Cours views
-def cours_list(request):
-    matieres = services.list_matieres(limit=200)
-    return render(request, "program/cours_list.html", {"matieres": matieres})
+def cours_list(request: HttpRequest):
+    q = request.GET.get('q')
+    try:
+        cours = services.list_cours(q=q, limit=200)
+    except Exception:
+        cours = services.list_cours(limit=200)
+    return render(request, "program/cours_list.html", {"cours": cours, "q": q or ""})
 
 
-def cour_create(request):
-    if request.method == "POST":
+def cour_create(request: HttpRequest):
+    if request.method == 'POST':
         form = CourForm(request.POST, request.FILES)
         if form.is_valid():
-            coef = form.cleaned_data.get("coefficient") or 0
-            # handle uploaded PDF (if any)
+            nom = form.cleaned_data.get("nom")
+            desc = form.cleaned_data.get("description")
+            coef = float(form.cleaned_data.get("coefficient") or 0)
+            mid = form.cleaned_data.get("matiere_id")
             courpdf_path = None
             uploaded = request.FILES.get('courpdf')
-            # validate uploaded file (must be PDF and not too large)
-            if uploaded:
-                # basic mime check + fallback to extension
-                content_type = getattr(uploaded, 'content_type', '') or ''
-                max_size = 10 * 1024 * 1024  # 10 MB
-                if not (('pdf' in content_type.lower()) or uploaded.name.lower().endswith('.pdf')):
-                    form.add_error('courpdf', 'Le fichier doit être au format PDF.')
-                elif uploaded.size and uploaded.size > max_size:
-                    form.add_error('courpdf', 'Le fichier est trop volumineux (max 10 MB).')
-
-            # validate matiere exists when provided
-            mid = form.cleaned_data.get('matiere_id') or None
-            if mid:
-                if not services.get_matiere(mid):
-                    form.add_error('matiere_id', 'Matière invalide.')
-
-            # if any validation errors were added, re-render form with errors
-            if form.errors:
-                matieres = services.list_matieres(limit=200)
-                return render(request, "program/cour_form.html", {"form": form, "matieres": matieres})
-
             if uploaded:
                 from django.core.files.storage import default_storage
                 from django.utils import timezone
-                # sanitize filename (replace spaces)
                 clean_name = uploaded.name.replace(' ', '_')
                 stamp = int(timezone.now().timestamp() * 1000)
                 filename = f"cours_pdfs/{stamp}_{clean_name}"
                 saved = default_storage.save(filename, uploaded)
-                # store public URL (resolves MEDIA_URL correctly)
                 try:
                     courpdf_path = default_storage.url(saved)
                 except Exception:
                     courpdf_path = saved
-
-            services.create_cour(
-                form.cleaned_data["nom"],
-                form.cleaned_data.get("description", ""),
-                float(coef),
-                mid,
-                courpdf_path,
-            )
+            services.create_cour(nom, desc, coef, mid, courpdf=courpdf_path)
             if request.headers.get("Hx-Request") == "true":
                 return cours_panel(request, created=True)
             return redirect("cours_list")
     else:
         form = CourForm()
-    # Provide matieres for the standalone create page so the select shows options
     matieres = services.list_matieres(limit=200)
     return render(request, "program/cour_form.html", {"form": form, "matieres": matieres})
 
@@ -472,3 +462,463 @@ def cour_view_summary(request: HttpRequest, cid=None):
         raise Http404("Cours not found")
     summary = c.get('generated_summary') or None
     return render(request, "program/_cours_summary_modal.html", {"summary": summary, "cid": cid})
+
+
+# ----- Public-facing views (simplified cards/list navigation)
+def public_program_index(request):
+    """Show all niveaux as cards. Each card shows the niveau name (bold) and a short description."""
+    q = request.GET.get('q')
+    try:
+        niveaux = services.list_niveaux(q=q, limit=200)
+    except Exception:
+        niveaux = services.list_niveaux(limit=200)
+    return render(request, "program/public_index.html", {"niveaux": niveaux, "q": q or ""})
+
+
+def public_niveau(request, niveau_id=None):
+    """Show matieres for a given niveau as cards. If niveau not found, show 404."""
+    n = services.get_niveau(niveau_id)
+    if not n:
+        raise Http404("Niveau not found")
+    # ensure the niveau dict exposes a string id for URL reversing in templates
+    try:
+        if not n.get('id'):
+            n['id'] = str(n.get('_id') or niveau_id)
+        else:
+            n['id'] = str(n.get('id'))
+    except Exception:
+        n['id'] = str(niveau_id or '')
+    q = request.GET.get('q')
+    coef = request.GET.get('coef')
+    try:
+        matieres = services.list_matieres(q=q, niveau_id=niveau_id, limit=200)
+    except Exception:
+        matieres = services.list_matieres(niveau_id=niveau_id, limit=200)
+
+    # filter by coefficient if provided
+    if coef not in (None, ''):
+        try:
+            coef_val = float(coef)
+            matieres = [m for m in matieres if m.get('coefficient') is not None and float(m.get('coefficient')) == coef_val]
+        except Exception:
+            # if coef is not a valid number, do not filter
+            pass
+
+    return render(request, "program/public_niveau.html", {"niveau": n, "matieres": matieres, "q": q or "", "coef": coef or ""})
+
+
+def public_matiere(request, matiere_id=None):
+    """Show cours list for a matiere. Each course is a link to the course detail page (names only)."""
+    m = services.get_matiere(matiere_id)
+    if not m:
+        raise Http404("Matière not found")
+    # ensure the matiere dict exposes a string id for URL reversing in templates
+    try:
+        if not m.get('id'):
+            m['id'] = str(m.get('_id') or matiere_id)
+        else:
+            m['id'] = str(m.get('id'))
+    except Exception:
+        m['id'] = str(matiere_id or '')
+    q = request.GET.get('q')
+    has_test = request.GET.get('has_test')
+    has_summary = request.GET.get('has_summary')
+    try:
+        cours = services.list_cours(q=q, matiere_id=matiere_id, limit=500)
+    except Exception:
+        cours = services.list_cours(matiere_id=matiere_id, limit=500)
+
+    # filter courses by presence of generated tests / summaries
+    if has_test in ('1', 'true', 'on'):
+        cours = [c for c in cours if c.get('generated_tests')]
+    if has_summary in ('1', 'true', 'on'):
+        cours = [c for c in cours if c.get('generated_summary')]
+
+    return render(request, "program/public_matiere.html", {"matiere": m, "cours": cours, "q": q or "", "has_test": has_test or "", "has_summary": has_summary or ""})
+
+
+def public_cour_detail(request, cour_id=None):
+    """Show course detail: embedded PDF (if available) and links/buttons for test and summary.
+
+    Uses existing endpoints for generate/view test and summary so the UI can open modals or new pages.
+    """
+    c = services.get_cour(cour_id)
+    if not c:
+        raise Http404("Cours not found")
+    # ensure the course dict exposes a string id for URL reversing in templates
+    try:
+        # prefer existing 'id' field if present, otherwise use _id
+        if not c.get('id'):
+            c['id'] = str(c.get('_id') or cour_id)
+        else:
+            c['id'] = str(c.get('id'))
+    except Exception:
+        c['id'] = str(cour_id or '')
+
+    # prepare simple values for template
+    tests_exist = bool(c.get('generated_tests'))
+    summary = c.get('generated_summary')
+
+    # Try to resolve the matiere object (for display) and expose a matiere name on the course dict
+    matiere = None
+    try:
+        mid = c.get('matiere_id')
+        if mid:
+            matiere = services.get_matiere(mid)
+            if matiere:
+                c['matiere_nom'] = matiere.get('nom')
+    except Exception:
+        # non-fatal: leave matiere as None
+        matiere = None
+
+    # Support a 'chapter' display field. If a dedicated 'chapter' exists use it,
+    # otherwise fall back to the legacy 'coefficient' value (this keeps backwards
+    # compatibility with existing data where coefficient may have been used).
+    chapter = c.get('chapter')
+    if chapter is None:
+        coef = c.get('coefficient')
+        if coef is not None:
+            try:
+                # try convert floats like 1.0 to int 1 for cleaner display
+                chapter = int(coef)
+            except Exception:
+                chapter = coef
+        else:
+            chapter = None
+    c['chapter'] = chapter
+
+    # provide both 'cour' and alias 'c' for templates that use either variable name
+    return render(request, "program/public_cour_detail.html", {"cour": c, "c": c, "tests_exist": tests_exist, "summary": summary, "matiere": matiere})
+
+
+def public_generate_plan(request: HttpRequest, niveau_id=None):
+    """Generate a study plan for a niveau and return an HTML partial for HTMX replacement.
+
+    Accepts optional POST params:
+    - unavailable: JSON mapping day -> list of hours to avoid, e.g. {"Mon": [12,13], "Sun": [10]}
+    - total_hours_per_week: integer
+    """
+    try:
+        n = services.get_niveau(niveau_id)
+        if not n:
+            raise Http404("Niveau not found")
+
+        # collect matieres for this niveau
+        try:
+            matieres = services.list_matieres(niveau_id=niveau_id, limit=200)
+        except Exception:
+            matieres = services.list_matieres(niveau_id=niveau_id)
+
+        # build simple list for generator
+        gen_matieres = []
+        for m in matieres:
+            gen_matieres.append({"nom": m.get('nom'), "coefficient": m.get('coefficient')})
+
+        # parse optional params
+        unavailable = {}
+        total_hours = 20
+        if request.method == 'POST':
+            # allow JSON body or form fields
+            try:
+                payload = json.loads(request.body.decode('utf-8')) if request.body else {}
+            except Exception:
+                payload = {}
+            # merge form-encoded if present
+            if not payload:
+                payload = {k: request.POST.get(k) for k in request.POST}
+            # parse unavailable
+            u = payload.get('unavailable')
+            if isinstance(u, str):
+                try:
+                    unavailable = json.loads(u)
+                except Exception:
+                    unavailable = {}
+            elif isinstance(u, dict):
+                unavailable = u
+            # parse total hours
+            try:
+                total_hours = int(payload.get('total_hours_per_week') or payload.get('total_hours') or total_hours)
+            except Exception:
+                total_hours = total_hours
+        else:
+            # GET: allow query params
+            try:
+                total_hours = int(request.GET.get('total_hours_per_week') or total_hours)
+            except Exception:
+                total_hours = total_hours
+
+        # normalize plan for template: build list of (day, slots)
+        plan_days = []
+        plan_summary = []
+        enriched_plan_days = []
+        # call local generator (fallback to a simple built-in generator on import error)
+        plan = None
+        try:
+            from ml_service.plan_generator import generate_plan
+            plan = generate_plan(gen_matieres, unavailable=unavailable, total_hours_per_week=total_hours)
+        except Exception:
+            # local fallback generator: distributes hours proportionally and fills hourly slots
+            def _local_generate(gen_matieres, unavailable, total_hours_per_week):
+                week_days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                hours = list(range(8, 21))
+                # numeric coefficients
+                numeric = []
+                for m in gen_matieres:
+                    try:
+                        numeric.append(float(m.get('coefficient') or 0))
+                    except Exception:
+                        numeric.append(0.0)
+                total_coef = sum(numeric) or 1.0
+                # allocate integer hours per matiere
+                alloc = []
+                for n in numeric:
+                    h = int(round(total_hours_per_week * (n / total_coef))) if total_coef > 0 else 0
+                    alloc.append(max(1, h) if n > 0 else 0)
+                # adjust rounding differences
+                s = sum(alloc)
+                if s != total_hours_per_week and alloc:
+                    diff = total_hours_per_week - s
+                    try:
+                        idx = numeric.index(max(numeric))
+                    except Exception:
+                        idx = 0
+                    alloc[idx] = max(0, alloc[idx] + diff)
+
+                # build assignment list
+                assignments = []
+                for i, a in enumerate(alloc):
+                    assignments.extend([i] * a)
+
+                slots = {d: [] for d in week_days}
+                ai = 0
+                for d in week_days:
+                    day_unavail = unavailable.get(d, []) if isinstance(unavailable, dict) else []
+                    for h in hours:
+                        if h in day_unavail:
+                            slots[d].append({"hour": h, "unavailable": True})
+                            continue
+                        if ai < len(assignments):
+                            slots[d].append({"hour": h, "matiere_idx": assignments[ai]})
+                            ai += 1
+                        else:
+                            slots[d].append({"hour": h})
+
+                # colors: min->green, max->red, others->orange
+                plan_summary = []
+                min_c = min(numeric) if numeric else 0
+                max_c = max(numeric) if numeric else 0
+                for i, m in enumerate(gen_matieres):
+                    coef = numeric[i]
+                    allocated = alloc[i] if i < len(alloc) else 0
+                    if max_c != min_c:
+                        if coef == max_c:
+                            color = '#ef4444'
+                        elif coef == min_c:
+                            color = '#16a34a'
+                        else:
+                            color = '#f97316'
+                    else:
+                        color = '#34d399'  # all same -> green-ish
+                    plan_summary.append({"nom": m.get('nom'), "coefficient": coef, "allocated_hours": allocated, "color": color})
+
+                return {"week_days": week_days, "hours": hours, "slots": slots, "summary": plan_summary}
+
+            try:
+                plan = _local_generate(gen_matieres, unavailable or {}, total_hours)
+            except Exception as e2:
+                plan = {"error": str(e2)}
+        if isinstance(plan, dict) and not plan.get('error'):
+            week_days = plan.get('week_days', [])
+            slots_map = plan.get('slots', {})
+            plan_summary = plan.get('summary', [])
+            for d in week_days:
+                day_slots = slots_map.get(d, [])
+                # enrich each slot with resolved matiere dict from summary
+                enriched = []
+                for s in day_slots:
+                    mi = s.get('matiere_idx')
+                    mat = None
+                    try:
+                        mat = plan_summary[int(mi)] if mi is not None and int(mi) < len(plan_summary) else None
+                    except Exception:
+                        mat = None
+                    # preserve unavailable flag from generator slots (if present)
+                    enriched.append({"hour": s.get('hour'), "matiere": mat, "unavailable": bool(s.get('unavailable', False))})
+                enriched_plan_days.append((d, enriched))
+        # Build a full hourly calendar (8..20) and mark unavailable hours
+        hours = list(range(8, 21))
+        calendar_days = []
+        # transform slots_map into per-day dict for quick lookup and build entries
+        for d, enriched in enriched_plan_days:
+            # map hour -> slot
+            by_hour = {s.get('hour'): s for s in enriched if s.get('hour') is not None}
+            entries = []
+            u_hours = []
+            try:
+                if isinstance(unavailable, dict):
+                    # keys may be strings; ensure day key exists
+                    u_hours = unavailable.get(d) or []
+            except Exception:
+                u_hours = []
+
+            for h in hours:
+                # user-marked unavailable hours take absolute precedence
+                if h in u_hours:
+                    entries.append({"hour": h, "matiere": None, "unavailable": True})
+                    continue
+                if h in by_hour:
+                    # if the enriched slot marked unavailable, keep that flag
+                    slot = by_hour[h]
+                    if slot.get('unavailable'):
+                        entries.append({"hour": h, "matiere": None, "unavailable": True})
+                    else:
+                        entries.append({"hour": h, "matiere": slot.get('matiere'), "unavailable": False})
+                else:
+                    entries.append({"hour": h, "matiere": None, "unavailable": False})
+
+            calendar_days.append((d, entries))
+
+        # compute colors for matieres based on coefficient (green=min -> red=max)
+        matiere_colors = {}
+        try:
+            coeffs = [float(m.get('coefficient') or m.get('coef') or 1.0) for m in plan_summary if isinstance(m, dict)]
+        except Exception:
+            coeffs = []
+        if coeffs:
+            c_min = min(coeffs)
+            c_max = max(coeffs)
+            span = c_max - c_min if c_max != c_min else 1.0
+            for idx, m in enumerate(plan_summary):
+                try:
+                    coef = float(m.get('coefficient') or m.get('coef') or 1.0)
+                except Exception:
+                    coef = 1.0
+                norm = (coef - c_min) / span
+                hue = int(120 - (120 * norm))
+                color = f"hsl({hue},70%,45%)"
+                bg = f"hsla({hue},70%,85%,0.9)"
+                name = m.get('nom') or str(idx)
+                matiere_colors[name] = {"color": color, "bg": bg}
+                matiere_colors[str(idx)] = {"color": color, "bg": bg}
+
+        # attach colors to calendar entries for easy template rendering
+        try:
+            for di, (d, entries) in enumerate(calendar_days):
+                for ei, e in enumerate(entries):
+                    mat = e.get('matiere')
+                    e['color'] = None
+                    e['bg'] = None
+                    if mat and isinstance(mat, dict):
+                        name = mat.get('nom') or ''
+                        col = matiere_colors.get(name)
+                        if not col:
+                            # try to find by identity or matching name
+                            idx = None
+                            try:
+                                idx = next((i for i, mm in enumerate(plan_summary) if mm is mat or (isinstance(mm, dict) and mm.get('nom') == name)), None)
+                            except Exception:
+                                idx = None
+                            if idx is not None:
+                                col = matiere_colors.get(str(idx))
+                        if col:
+                            e['color'] = col.get('color')
+                            e['bg'] = col.get('bg')
+        except Exception:
+            pass
+
+        # Build a matrix of rows for easier template rendering: each row = (hour, [cell_for_day...])
+        day_labels = [d for d, _ in calendar_days]
+        calendar_rows = []
+        for h in hours:
+            row_cells = []
+            for d, entries in calendar_days:
+                # find matching entry for this hour
+                found = None
+                for e in entries:
+                    try:
+                        if e.get('hour') == h:
+                            found = e
+                            break
+                    except Exception:
+                        pass
+                if not found:
+                    found = {"hour": h, "matiere": None, "unavailable": False, "color": None, "bg": None}
+                row_cells.append(found)
+            calendar_rows.append((h, row_cells))
+        return render(request, "program/_plan_calendar.html", {"plan": plan, "day_labels": day_labels, "calendar_rows": calendar_rows, "hours": hours, "niveau": n, "unavailable": unavailable})
+    except Exception as e:
+        import traceback as _tb
+        tb = _tb.format_exc()
+        return render(request, "program/_plan_error.html", {"error": str(e), "trace": tb})
+
+
+def public_generate_plan_pre(request: HttpRequest, niveau_id=None):
+    """Return an availability labeling form (HTML partial) so the user can
+    mark times they are NOT available before generating the study plan.
+
+    This endpoint is intended for HTMX. It returns a small form which will
+    POST to the real `public_generate_plan` endpoint with a hidden
+    `unavailable` JSON payload containing a mapping of day -> [hours].
+    """
+    n = services.get_niveau(niveau_id)
+    if not n:
+        raise Http404("Niveau not found")
+
+    # ensure the niveau dict exposes a string id for URL reversing in templates
+    try:
+        if not n.get('id'):
+            n['id'] = str(n.get('_id') or niveau_id)
+        else:
+            n['id'] = str(n.get('id'))
+    except Exception:
+        n['id'] = str(niveau_id or '')
+
+    # days and hours presented to the user; generator expects keys like 'Mon','Tue',... but
+    # keep labels simple (English 3-letter keys) for the payload. Adjust as needed.
+    days = [
+        ("Mon", "Lundi"),
+        ("Tue", "Mardi"),
+        ("Wed", "Mercredi"),
+        ("Thu", "Jeudi"),
+        ("Fri", "Vendredi"),
+        ("Sat", "Samedi"),
+        ("Sun", "Dimanche"),
+    ]
+    # Show typical study hours (8..20)
+    hours = list(range(8, 21))
+    return render(request, "program/_plan_availability_form.html", {"niveau": n, "days": days, "hours": hours})
+
+
+def cour_view_test_inline(request: HttpRequest, cid=None):
+    """Return generated questions rendered for inline replacement (HTMX)."""
+    c = services.get_cour(cid)
+    if not c:
+        raise Http404("Cours not found")
+    questions = c.get('generated_tests') or []
+    # ensure cid for template links
+    try:
+        questions_json = json.dumps(questions)
+    except Exception:
+        questions_json = '[]'
+    return render(request, "program/_cours_tests_inline.html", {"questions": questions, "questions_json": questions_json, "error": None, "cid": cid})
+
+
+def cour_view_summary_inline(request: HttpRequest, cid=None):
+    c = services.get_cour(cid)
+    if not c:
+        raise Http404("Cours not found")
+    summary = c.get('generated_summary') or None
+    return render(request, "program/_cours_summary_inline.html", {"summary": summary, "error": None, "cid": cid})
+
+
+def cour_pdf_partial(request: HttpRequest, cid=None):
+    c = services.get_cour(cid)
+    if not c:
+        raise Http404("Cours not found")
+    # ensure id present for partial includes
+    if not c.get('id'):
+        try:
+            c['id'] = str(c.get('_id') or cid)
+        except Exception:
+            c['id'] = str(cid or '')
+    return render(request, "program/_cours_pdf_partial.html", {"cour": c})

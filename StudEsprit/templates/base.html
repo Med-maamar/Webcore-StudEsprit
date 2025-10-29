@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="{% static 'build/tailwind.css' %}">
   <script defer src="https://unpkg.com/htmx.org@1.9.12"></script>
   <script defer src="https://unpkg.com/flowbite@2.5.1/dist/flowbite.min.js"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.12.0/dist/cdn.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -58,7 +59,7 @@
         </div>
         <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
           <a href="/" class="hover:text-esprit-red">Accueil</a>
-          <a href="/courses/" class="hover:text-esprit-red">Programmes</a>
+          <a href="{% url 'program_public_index' %}" class="hover:text-esprit-red">Programmes</a>
           <div class="relative">
             <button id="careersDropdownButton" data-dropdown-toggle="careersDropdown" data-dropdown-placement="bottom" class="inline-flex items-center gap-1 hover:text-esprit-red" type="button">
               Carrières

@@ -6,6 +6,7 @@
           <tr>
             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nom</th>
             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Niveau</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Coefficient</th>
             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</th>
             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
@@ -15,6 +16,7 @@
           <tr class="hover:bg-gray-50">
             <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ m.nom }}</td>
             <td class="px-6 py-4 text-sm text-gray-600">{{ m.niveau_nom }}</td>
+            <td class="px-6 py-4 text-sm text-gray-600">{% if m.coefficient %}{{ m.coefficient }}{% else %}&mdash;{% endif %}</td>
             <td class="px-6 py-4 text-sm text-gray-600">{{ m.description|default:'—' }}</td>
             <td class="px-6 py-4 text-sm text-right">
               <div class="inline-flex items-center space-x-2">
@@ -48,6 +50,7 @@
           <div class="text-sm font-semibold text-gray-900">{{ m.nom }}</div>
           <div class="text-xs text-gray-500">{{ m.niveau_nom }}</div>
           <div class="text-sm text-gray-600 mt-2">{{ m.description|default:'—' }}</div>
+          <div class="text-sm text-gray-600 mt-2">Coef: <span class="font-medium">{% if m.coefficient %}{{ m.coefficient }}{% else %}&mdash;{% endif %}</span></div>
         </div>
         <div class="flex flex-col gap-2">
           <button hx-get="{% url 'matiere_edit' m.id %}" hx-target="#matieres-modal" hx-swap="innerHTML" title="Modifier" aria-label="Modifier" class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-blue-600 text-white hover:bg-blue-700">
