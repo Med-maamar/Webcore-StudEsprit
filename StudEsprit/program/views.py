@@ -8,6 +8,7 @@ from django.core.files.storage import default_storage
 import tempfile
 import json
 from typing import Any, Dict
+from ml_service import average_analyzer
 
 
 class NiveauForm(forms.Form):
@@ -850,6 +851,87 @@ def public_generate_plan(request: HttpRequest, niveau_id=None):
         import traceback as _tb
         tb = _tb.format_exc()
         return render(request, "program/_plan_error.html", {"error": str(e), "trace": tb})
+
+
+def public_analyze_average(request: HttpRequest, niveau_id=None):
+    """Analyze averages for a niveau or for a provided list of matieres.
+
+    Accepts POST JSON payload with optional keys:
+      - matieres: [{"nom":"...","coefficient":x,"grade":y}, ...]
+    If no payload is provided, the endpoint will load matieres for the `niveau_id`
+    and expect optional form-encoded fields `grades[<matiere_id>]`.
+
+    Returns an HTML partial rendering the analysis.
+    """
+    try:
+        payload = {}
+        if request.method == 'POST':
+            try:
+                payload = json.loads(request.body.decode('utf-8')) if request.body else {}
+            except Exception:
+                payload = {k: request.POST.get(k) for k in request.POST}
+
+        matieres = payload.get('matieres')
+        # If matieres provided in payload, try to enrich them with DB data when
+        # only an id is supplied (so per-matiere analyze button can send {id}).
+        if matieres:
+            enriched = []
+            for m in matieres:
+                # accept either {'id':...} or {'matiere_id':...}
+                mid = m.get('id') or m.get('matiere_id') or m.get('_id')
+                if (not m.get('nom') or not m.get('coefficient')) and mid:
+                    try:
+                        dbm = services.get_matiere(mid)
+                        if dbm:
+                            mm = {"nom": dbm.get('nom'), "coefficient": dbm.get('coefficient'), "grade": m.get('grade')}
+                        else:
+                            mm = {"nom": m.get('nom'), "coefficient": m.get('coefficient'), "grade": m.get('grade')}
+                    except Exception:
+                        mm = {"nom": m.get('nom'), "coefficient": m.get('coefficient'), "grade": m.get('grade')}
+                else:
+                    mm = {"nom": m.get('nom'), "coefficient": m.get('coefficient'), "grade": m.get('grade')}
+                enriched.append(mm)
+            matieres = enriched
+        if not matieres:
+            # load matieres for the niveau
+            try:
+                matieres = services.list_matieres(niveau_id=niveau_id, limit=200)
+            except Exception:
+                matieres = services.list_matieres(limit=200)
+            # attach grades if provided via form mapping: grades[<matiere_id>]=value
+            grades_map = {}
+            # accept form-encoded grades like grades[<id>]=12 or JSON mapping
+            if isinstance(payload, dict) and payload.get('grades') and isinstance(payload.get('grades'), dict):
+                grades_map = payload.get('grades')
+            else:
+                for k, v in (request.POST.items() if request.method == 'POST' else []):
+                    if k.startswith('grades[') and k.endswith(']'):
+                        mid = k[len('grades['):-1]
+                        try:
+                            grades_map[mid] = float(v)
+                        except Exception:
+                            pass
+            # build canonical matieres list
+            canonical = []
+            for m in matieres:
+                mm = {"nom": m.get('nom'), "coefficient": m.get('coefficient')}
+                gid = m.get('id') or str(m.get('_id') or '')
+                if gid and str(gid) in grades_map:
+                    try:
+                        mm['grade'] = float(grades_map[str(gid)])
+                    except Exception:
+                        mm['grade'] = None
+                else:
+                    mm['grade'] = None
+                canonical.append(mm)
+            matieres = canonical
+
+        # run analyzer
+        res = average_analyzer.analyze(matieres, targets=[10.0, 13.0])
+        return render(request, "program/_average_analysis.html", {"analysis": res, "matieres": matieres})
+    except Exception as e:
+        import traceback as _tb
+        return render(request, "program/_plan_error.html", {"error": str(e), "trace": _tb.format_exc()})
 
 
 def public_generate_plan_pre(request: HttpRequest, niveau_id=None):

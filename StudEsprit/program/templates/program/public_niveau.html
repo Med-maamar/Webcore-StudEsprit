@@ -27,6 +27,13 @@
         hx-swap="innerHTML"
         class="px-3 py-2 bg-blue-600 text-white rounded-xl"
       >Générer planning</button>
+           <button
+        hx-post="{% url 'program_public_analyze_average' niveau.id %}"
+        hx-target="#plan-area"
+        hx-swap="innerHTML"
+        hx-include="#grades-form"
+        class="px-3 py-2 bg-green-600 text-white rounded-xl"
+      >Analyser moyenne</button>
     </div>
   </form>
 

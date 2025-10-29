@@ -1,0 +1,43 @@
+<div class="p-4 bg-white rounded-lg border">
+  <h3 class="text-lg font-semibold mb-2">Analyse des moyennes</h3>
+
+  {% for t_key, tdata in analysis.targets.items %}
+    <div class="mb-4">
+  
+      <!-- Suggested distribution -->
+      {% if tdata.suggestion %}
+        <div class="mt-3">
+          <h5 class="font-medium">Proposition de répartition pour atteindre {{ t_key }} {% if not tdata.suggestion.possible %}<span class="text-red-600">(Impossible)</span>{% endif %}</h5>
+          <table class="min-w-full text-sm border-collapse mt-2">
+            <thead>
+              <tr class="bg-gray-50">
+                <th class="p-2 text-left">Matière</th>
+                <th class="p-2 text-left">Coef</th>
+                <th class="p-2 text-left">Note suggérée</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in tdata.suggestion.per_matiere %}
+                <tr>
+                  <td class="p-2">{{ s.nom }}</td>
+                  <td class="p-2">{{ s.coefficient|default:'-' }}</td>
+                  <td class="p-2">
+                    {% if s.suggested_grade is not None %}
+                      {% if s.suggested_impossible %}
+                        <span class="text-red-600">Impossible</span>
+                      {% else %}
+                        <span class="font-medium">{{ s.suggested_grade }}</span>
+                      {% endif %}
+                    {% else %}
+                      &mdash;
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
