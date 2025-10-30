@@ -15,8 +15,19 @@ DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"}
 # For local development, avoid hardcoding HTTPS origins to prevent HTTPS-only behavior.
 # Uncomment the production origin below when deploying.
 # CSRF_TRUSTED_ORIGINS = ['https://webcore-studesprit.onrender.com']
-CSRF_TRUSTED_ORIGINS = [] if DEBUG else ['https://webcore-studesprit.onrender.com']
-ALLOWED_HOSTS = ['webcore-studesprit.onrender.com', 'localhost', '127.0.0.1']
+# CSRF Trusted Origins — FIXED FOR PRODUCTION
+CSRF_TRUSTED_ORIGINS = [
+    'https://webcore-studesprit.onrender.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+
+# ALLOWED_HOSTS — PERFECT
+ALLOWED_HOSTS = [
+    'webcore-studesprit.onrender.com',
+    'localhost',
+    '127.0.0.1',
+]
 
 APP_VERSION = "0.1.0"
 
