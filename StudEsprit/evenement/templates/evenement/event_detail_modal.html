@@ -1,0 +1,15 @@
+<h2>{{ event.title }}</h2>
+<p><strong>Date :</strong> {{ event.start_datetime|date:"d/m/Y H:i" }}
+   {% if event.end_datetime %} – {{ event.end_datetime|date:"H:i" }}{% endif %}
+</p>
+<p><strong>Lieu :</strong> {{ event.location }}</p>
+<p>{{ event.description }}</p>
+
+{% if user_is_registered %}
+<p style="color:green;">Vous êtes inscrit à cet événement.</p>
+{% else %}
+<form method="post" action="{% url 'evenement:event_register' event.id %}">
+    {% csrf_token %}
+    <button type="submit" style="background:#28a745; color:#fff; padding:8px 16px; border-radius:5px; border:none;">S’inscrire</button>
+</form>
+{% endif %}

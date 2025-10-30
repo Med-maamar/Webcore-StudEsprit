@@ -1,0 +1,17 @@
+{% for event in events %}
+  <div style="background:#fff; padding:1.2rem; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.08);">
+    <h2 style="margin:0 0 .4rem; font-size:1.3rem; color:#d6232a;">{{ event.title }}</h2>
+    <p style="margin:0 0 .4rem; color:#555;">
+      <strong>Date :</strong> {{ event.start_datetime|date:"d/m/Y à H:i" }}
+      {% if event.end_datetime %} – {{ event.end_datetime|date:"H:i" }}{% endif %}
+    </p>
+    <p style="margin:0 0 .8rem; color:#555;">
+      <strong>Description :</strong> {{ event.description|truncatewords:20 }}
+    </p>
+    <p style="margin:0 0 .8rem; color:#555;">
+      <strong>Lieu :</strong> {{ event.location }}
+    </p>
+  </div>
+{% empty %}
+  <p style="text-align:center; color:#777;">Aucun événement trouvé.</p>
+{% endfor %}

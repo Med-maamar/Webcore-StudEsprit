@@ -1,0 +1,62 @@
+[
+  {
+    "periode_debut": "09",
+    "periode_fin": "10",
+    "type_evenement": "Welcome Week",
+    "description": "Semaine d'accueil pour nouveaux étudiants : visites campus, ateliers d'orientation et mixers sociaux pour favoriser l'intégration dès la rentrée universitaire (12 septembre)."
+  },
+  {
+    "periode_debut": "09",
+    "periode_fin": "10",
+    "type_evenement": "Journée Portes Ouvertes",
+    "description": "Événement pour présenter les programmes et recruter : stands des départements, démos et sessions info pour attirer les futurs étudiants en début d'année."
+  },
+  {
+    "periode_debut": "11",
+    "periode_fin": "12",
+    "type_evenement": "Conférence Académique",
+    "description": "Conférences invitées sur des thèmes comme l'IA ou l'entrepreneuriat, alignées sur le semestre d'automne pour enrichir les cours."
+  },
+  {
+    "periode_debut": "11",
+    "periode_fin": "12",
+    "type_evenement": "Ateliers de Compétences",
+    "description": "Sessions pratiques sur CV, entretiens d'embauche et outils numériques, pour préparer les étudiants aux stages de mi-semestre."
+  },
+  {
+    "periode_debut": "01",
+    "periode_fin": "02",
+    "type_evenement": "Période Examens",
+    "description": "Sessions de soutien et tutorat : ateliers de révision et consultations gratuites pendant la session d'examens de janvier-février."
+  },
+  {
+    "periode_debut": "01",
+    "periode_fin": "02",
+    "type_evenement": "Compétition Inter-Étudiants",
+    "description": "Concours de projets ou hackathons sur des thèmes académiques, pour stimuler la créativité post-examens."
+  },
+  {
+    "periode_debut": "03",
+    "periode_fin": "04",
+    "type_evenement": "Journée Culturelle",
+    "description": "Événement multiculturel avec expositions, musique et cuisine tunisienne/internationale, pendant l'interruption pour Aid-el-Fitr."
+  },
+  {
+    "periode_debut": "03",
+    "periode_fin": "04",
+    "type_evenement": "Séminaire Professionnel",
+    "description": "Rencontres avec alumni et entreprises pour networking, adapté au printemps pour booster les candidatures aux stages."
+  },
+  {
+    "periode_debut": "05",
+    "periode_fin": "06",
+    "type_evenement": "Préparation Examens Finaux",
+    "description": "Workshops de gestion du stress et révision intensive, avant la session d'examens de juin et Aid-el-Kébir."
+  },
+  {
+    "periode_debut": "05",
+    "periode_fin": "06",
+    "type_evenement": "Fête de Fin d'Année",
+    "description": "Gala de clôture avec remises de prix, concerts et barbecue pour célébrer les réussites avant les vacances d'été."
+  }
+]

@@ -1,9 +1,101 @@
 {% extends 'base.html' %}
 {% block content %}
+
 <div style="text-align:left; margin-bottom:1em; display:flex; flex-direction:column; align-items:flex-start; gap:0.4rem;">
   <h1 style="margin:0; display:inline-block; font-size:1.6rem; font-weight:700;">Liste des événements</h1>
-  <a href="{% url 'evenement:event_create' %}" role="button" style="display:inline-block;background:#d6232a;color:#fff;padding:6px 10px;border-radius:9999px;text-decoration:none;border:1px solid rgba(0,0,0,0.08);box-shadow:0 1px 3px rgba(0,0,0,0.04);font-size:0.9rem;">Créer un événement</a>
+  
+  <!-- 🟢 Boutons d'action principaux -->
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a href="{% url 'evenement:event_create' %}" role="button" 
+       style="display:inline-block; background:#d6232a; color:#fff; padding:8px 16px; border-radius:9999px; text-decoration:none; border:1px solid rgba(0,0,0,0.08); box-shadow:0 1px 3px rgba(0,0,0,0.04); font-size:0.9rem;">
+       ➕ Créer un événement
+    </a>
+
+    <button id="eventIdeaBtn" 
+       style="background:#28a745; color:#fff; padding:8px 16px; border-radius:9999px; text-decoration:none; border:none; cursor:pointer; font-size:0.9rem;">
+       💡 Idée d'événement
+    </button>
+
+    <button id="findAddressBtn"
+       style="background:#007bff; color:#fff; padding:8px 16px; border-radius:9999px; text-decoration:none; border:none; cursor:pointer; font-size:0.9rem;">
+       📍 Trouver adresse
+    </button>
+  </div>
 </div>
+
+<!-- 🔹 MODAL TROUVER ADRESSE (mise à jour avec affichage complet) -->
+<div id="findAddressModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+  <div style="background:#fff; margin:10% auto; padding:30px; border-radius:12px; width:90%; max-width:600px; max-height:80vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 style="margin:0; font-size:1.4rem; color:#333;">📍 Trouver une adresse selon le type d'événement</h3>
+      <button id="closeAddressModal" style="background:none; border:none; font-size:24px; cursor:pointer; color:#666;">×</button>
+    </div>
+
+    <div style="margin-bottom:20px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">Sélectionnez un type d'événement :</label>
+      <select id="eventTypeSelect" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:16px;">
+        <option value="">Choisir un type...</option>
+        <option value="Formation éducative">📘 Formation éducative</option>
+        <option value="Hackathon">💻 Événement de codage</option>
+        <option value="Conférence">🎤 Conférence</option>
+        <option value="Workshop">🛠️ Atelier pratique</option>
+        <option value="Forum">🌍 Forum & Networking</option>
+      </select>
+      <button id="loadAddresses" 
+         style="width:100%; background:#007bff; color:white; padding:12px; border:none; border-radius:8px; font-size:16px; margin-top:15px; cursor:pointer;">
+         Trouver les adresses
+      </button>
+    </div>
+
+    <div id="addressesDisplay" style="min-height:100px;"></div>
+  </div>
+</div>
+
+<!-- 🔹 MODAL IDÉES D'ÉVÉNEMENTS (inchangée) -->
+<div id="eventIdeaModal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5);">
+  <div style="background:#fff; margin:10% auto; padding:30px; border-radius:12px; width:90%; max-width:600px; max-height:80vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 style="margin:0; font-size:1.4rem; color:#333;">💡 Idées d'événements</h3>
+      <button id="closeModal" style="background:none; border:none; font-size:24px; cursor:pointer; color:#666;">×</button>
+    </div>
+    
+    <div style="margin-bottom:20px;">
+      <label style="display:block; margin-bottom:8px; font-weight:500;">Sélectionnez une période :</label>
+      <select id="monthSelect" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:16px;">
+        <option value="">Choisir une période...</option>
+        <option value="09-10">📚 Septembre-Octobre (Rentrée)</option>
+        <option value="11-12">🎓 Novembre-Décembre (Semestre Automne)</option>
+        <option value="01-02">📝 Janvier-Février (Examens)</option>
+        <option value="03-04">🌟 Mars-Avril (Printemps)</option>
+        <option value="05-06">🎉 Mai-Juin (Fin d'année)</option>
+      </select>
+      <button id="loadIdeas" 
+         style="width:100%; background:#28a745; color:white; padding:12px; border:none; border-radius:8px; font-size:16px; margin-top:15px; cursor:pointer;">
+         Afficher les idées
+      </button>
+    </div>
+    
+    <div id="ideasDisplay" style="min-height:100px;"></div>
+  </div>
+</div>
+
+<!-- 🔹 PROCHAIN ÉVÉNEMENT (inchangé) -->
+{% if upcoming_event %}
+  <div style="background:#e8f5e9; border-left:4px solid #28a745; padding:15px; margin-bottom:20px; border-radius:8px;">
+    <h3 style="margin:0; color:#2e7d32;">📅 Prochain événement à venir</h3>
+    <p style="margin:8px 0 0 0;">
+      <strong>{{ upcoming_event.title }}</strong><br>
+      📍 {{ upcoming_event.location }}<br>
+      🕒 {{ upcoming_event.start_datetime|date:"d/m/Y H:i" }}
+    </p>
+  </div>
+{% else %}
+  <div style="background:#fff3cd; border-left:4px solid #ffca28; padding:15px; margin-bottom:20px; border-radius:8px;">
+    <p style="margin:0;">Aucun événement à venir pour le moment.</p>
+  </div>
+{% endif %}
+
+<!-- 🔹 TABLEAU DES ÉVÉNEMENTS (inchangé) -->
 <table style="width:100%; max-width:900px; border-collapse:collapse; background:#fff; box-shadow:0 2px 8px #eee;">
   <thead style="background:#f5f5f5;">
     <tr>
@@ -28,7 +120,7 @@
         </a>
         <form method="post" action="{% url 'evenement:event_delete' event.id %}" style="display:inline;" class="delete-event-form">
           {% csrf_token %}
-          <button type="submit" title="Supprimer" style="background:none;border:none;cursor:pointer;padding:0;margin:0;">
+          <button type="submit" title="Supprimer" style="background:none; border:none; cursor:pointer; padding:0; margin:0;">
             <span style="font-size:18px; color:#c00;">🗑️</span>
           </button>
         </form>
@@ -39,19 +131,127 @@
     {% endfor %}
   </tbody>
 </table>
+
 <script>
-  // Confirmation before deleting an event. If JS disabled, server-side confirmation still applies.
-  (function(){
-    document.addEventListener('DOMContentLoaded', function(){
-      document.querySelectorAll('form.delete-event-form').forEach(function(form){
-        form.addEventListener('submit', function(e){
-          var ok = confirm('Voulez-vous vraiment supprimer cet événement ?');
-          if(!ok){
-            e.preventDefault();
-          }
-        });
-      });
+document.addEventListener('DOMContentLoaded', function() {
+  // === GESTION MODAL IDÉE D'ÉVÉNEMENT (inchangée) ===
+  const ideaModal = document.getElementById('eventIdeaModal');
+  const ideaBtn = document.getElementById('eventIdeaBtn');
+  const closeIdeaBtn = document.getElementById('closeModal');
+  const loadIdeasBtn = document.getElementById('loadIdeas');
+  const monthSelect = document.getElementById('monthSelect');
+  const ideasDisplay = document.getElementById('ideasDisplay');
+
+  ideaBtn.addEventListener('click', () => ideaModal.style.display = 'block');
+  closeIdeaBtn.addEventListener('click', () => ideaModal.style.display = 'none');
+  window.addEventListener('click', (e) => {
+    if (e.target === ideaModal) ideaModal.style.display = 'none';
+  });
+
+  loadIdeasBtn.addEventListener('click', async () => {
+    const period = monthSelect.value;
+    if (!period) {
+      ideasDisplay.innerHTML = '<p style="color:#999; text-align:center;">Veuillez sélectionner une période.</p>';
+      return;
+    }
+
+    loadIdeasBtn.innerHTML = 'Chargement...';
+    loadIdeasBtn.disabled = true;
+    
+    try {
+      const response = await fetch(`/evenement/get_event_ideas/?period=${period}`);
+      if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
+      const data = await response.json();
+
+      if (data.ideas && data.ideas.length > 0) {
+        const ideasHtml = data.ideas.map(idea => `
+          <div style="background:#f8f9fa; border-left:4px solid #28a745; padding:15px; margin-bottom:15px; border-radius:8px;">
+            <h4 style="margin:0 0 8px 0; color:#28a745;">${idea.type_evenement}</h4>
+            <p style="margin:0; color:#555;">${idea.description}</p>
+            <a href="/evenement/create/?title=${encodeURIComponent(idea.type_evenement)}&description=${encodeURIComponent(idea.description)}"
+               style="display:inline-block; background:#d6232a; color:#fff; padding:8px 16px; border-radius:9999px; text-decoration:none; margin-top:10px;">
+              Créer
+            </a>
+          </div>
+        `).join('');
+        ideasDisplay.innerHTML = ideasHtml;
+      } else {
+        ideasDisplay.innerHTML = `<p style="color:#dc3545; text-align:center;">${data.error || 'Aucune idée disponible.'}</p>`;
+      }
+    } catch (error) {
+      ideasDisplay.innerHTML = `<p style="color:#dc3545; text-align:center;">Erreur : ${error.message}</p>`;
+    }
+    
+    loadIdeasBtn.innerHTML = 'Afficher les idées';
+    loadIdeasBtn.disabled = false;
+  });
+
+  // === GESTION MODAL TROUVER ADRESSE (NOUVEAU) ===
+  const addressModal = document.getElementById('findAddressModal');
+  const addressBtn = document.getElementById('findAddressBtn');
+  const closeAddressBtn = document.getElementById('closeAddressModal');
+  const loadAddressesBtn = document.getElementById('loadAddresses');
+  const eventTypeSelect = document.getElementById('eventTypeSelect');
+  const addressesDisplay = document.getElementById('addressesDisplay');
+
+  // Ouvrir la modale
+  addressBtn.addEventListener('click', () => addressModal.style.display = 'block');
+  
+  // Fermer la modale
+  closeAddressBtn.addEventListener('click', () => addressModal.style.display = 'none');
+  window.addEventListener('click', (e) => {
+    if (e.target === addressModal) addressModal.style.display = 'none';
+  });
+
+  // Charger les adresses
+  loadAddressesBtn.addEventListener('click', async () => {
+    const eventType = eventTypeSelect.value;
+    if (!eventType) {
+      addressesDisplay.innerHTML = '<p style="color:#999; text-align:center;">Veuillez sélectionner un type d\'événement.</p>';
+      return;
+    }
+
+    loadAddressesBtn.innerHTML = 'Recherche...';
+    loadAddressesBtn.disabled = true;
+    
+    try {
+      const response = await fetch(`/evenement/get_event_locations/?type_evenement=${encodeURIComponent(eventType)}`);
+      if (!response.ok) throw new Error(`Erreur HTTP: ${response.status} - ${response.statusText}`);
+      const data = await response.json();
+
+      if (data.adresses && data.adresses.length > 0) {
+        const addressesHtml = data.adresses.map(addr => `
+          <div style="background:#f8f9fa; border-left:4px solid #007bff; padding:15px; margin-bottom:15px; border-radius:8px;">
+            <h4 style="margin:0 0 8px 0; color:#007bff;">${addr.nom}</h4>
+            <p style="margin:0 0 5px 0; color:#555; font-size:0.9rem;"><strong>Adresse :</strong> ${addr.adresse}</p>
+            <p style="margin:0 0 5px 0; color:#555; font-size:0.9rem;"><strong>Capacité :</strong> ${addr.capacite} personnes</p>
+            <p style="margin:0 0 10px 0; color:#666; font-size:0.85rem; font-style:italic;">${addr.description}</p>
+            <a href="/evenement/create/?location=${encodeURIComponent(addr.adresse)}&title=Événement à ${addr.nom}"
+               style="display:inline-block; background:#007bff; color:#fff; padding:8px 16px; border-radius:9999px; text-decoration:none; font-size:0.9rem;">
+              Sélectionner cette adresse
+            </a>
+          </div>
+        `).join('');
+        addressesDisplay.innerHTML = addressesHtml;
+      } else {
+        addressesDisplay.innerHTML = `<p style="color:#dc3545; text-align:center;">${data.error || 'Aucune adresse disponible.'}</p>`;
+      }
+    } catch (error) {
+      addressesDisplay.innerHTML = `<p style="color:#dc3545; text-align:center;">Erreur : ${error.message}. Vérifiez la console.</p>`;
+      console.error('Erreur AJAX adresses:', error);
+    }
+    
+    loadAddressesBtn.innerHTML = 'Trouver les adresses';
+    loadAddressesBtn.disabled = false;
+  });
+
+  // Confirmation avant suppression (inchangée)
+  document.querySelectorAll('form.delete-event-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      if (!confirm('Voulez-vous vraiment supprimer cet événement ?')) e.preventDefault();
     });
-  })();
+  });
+});
 </script>
+
 {% endblock %}

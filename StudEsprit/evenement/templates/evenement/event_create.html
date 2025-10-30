@@ -33,10 +33,12 @@
       }
       #id_title {
         height: 40px; /* Standard height for title input */
+        background-color: #f0f8ff; /* Légère teinte bleue pour indiquer pré-rempli */
       }
       #id_description {
         height: 80px; /* Slightly larger than title, adjustable */
         resize: vertical; /* Allows vertical resizing if needed */
+        background-color: #f0f8ff; /* Légère teinte bleue pour indiquer pré-rempli */
       }
       #id_start_datetime,
       #id_end_datetime {
@@ -45,7 +47,12 @@
       #id_location {
         height: 40px; /* Match title height */
       }
+      /* Style pour is_public (checkbox) */
+      #id_is_public {
+        margin-top: 10px;
+      }
     </style>
+    <p style="font-size: 0.9rem; color: #666; margin: 0;">* Les champs "Titre" et "Description" sont pré-remplis à partir d'une idée suggérée. Vous pouvez les modifier si besoin.</p>
     <button type="submit" style="background: #1f73e6; color: #fff; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; width: 100%; box-sizing: border-box;">Créer</button>
   </form>
 </div>
