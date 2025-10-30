@@ -42,9 +42,8 @@
 </div>
 
 <script>
-// Default to the same-origin Django proxy so the generator runs under
-// the app's origin (e.g. http://127.0.0.1:8000). Override via
-// window.GENERATOR_URL if you need to point to an external generator.
+// Use the same-origin Django proxy by default so no CORS/CSRF issues.
+// Override window.GENERATOR_URL to point elsewhere if desired.
 const GENERATOR_URL = window.GENERATOR_URL || '/program/api/generate_matieres/';
 
 function openGenerateModal() {
