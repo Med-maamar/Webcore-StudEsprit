@@ -6,6 +6,38 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from collections import Counter
 
 
+def _ensure_nltk_data():
+    """Ensure NLTK data is available across versions.
+
+    NLTK >=3.9 split punkt into a new resource 'punkt_tab'. Try both to be
+    compatible on any environment.
+    """
+    # punkt / punkt_tab
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except Exception:
+        try:
+            nltk.download('punkt')
+        except Exception:
+            pass
+    # Some newer versions expect punkt_tab
+    try:
+        nltk.data.find('tokenizers/punkt_tab')
+    except Exception:
+        try:
+            nltk.download('punkt_tab')
+        except Exception:
+            pass
+    # stopwords
+    try:
+        nltk.data.find('corpora/stopwords')
+    except Exception:
+        try:
+            nltk.download('stopwords')
+        except Exception:
+            pass
+
+
 def extract_text_from_pdf(path: str) -> str:
     text = []
     with open(path, 'rb') as fh:
@@ -48,15 +80,8 @@ def generate_distractors(correct_answer: str, all_words: list, num_distractors=3
 
 def generate_questions_from_text(pdf_path: str, num_questions=5):
     try:
-        # ensure nltk data
-        try:
-            nltk.data.find('tokenizers/punkt')
-        except Exception:
-            nltk.download('punkt')
-        try:
-            nltk.data.find('corpora/stopwords')
-        except Exception:
-            nltk.download('stopwords')
+        # ensure nltk data across versions
+        _ensure_nltk_data()
 
         text = extract_text_from_pdf(pdf_path)
         if not text.strip():
@@ -156,15 +181,8 @@ def generate_summary_from_text(pdf_path: str, num_sentences=5):
     Selects the most important sentences based on keyword frequency.
     """
     try:
-        # Ensure nltk data
-        try:
-            nltk.data.find('tokenizers/punkt')
-        except Exception:
-            nltk.download('punkt')
-        try:
-            nltk.data.find('corpora/stopwords')
-        except Exception:
-            nltk.download('stopwords')
+        # Ensure nltk data across versions
+        _ensure_nltk_data()
         
         # Extract text from PDF
         text = extract_text_from_pdf(pdf_path)

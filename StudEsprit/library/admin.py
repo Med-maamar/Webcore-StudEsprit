@@ -583,6 +583,8 @@ class LibraryAdminViews:
             self.admin_site.each_context(request),
             title=f"Post: {post.get('title')}",
             post=post,
+            # Provide a stringified id for safe template URL reversing
+            post_id=str(post.get('_id')),
         )
         return TemplateResponse(request, 'admin/library/post_detail.html', context)
 

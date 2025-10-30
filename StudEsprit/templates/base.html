@@ -79,11 +79,11 @@
           <a href="/" class="hover:text-esprit-red">Accueil</a>
           <a href="{% url 'program_public_index' %}" class="hover:text-esprit-red">Programmes</a>
           {% if not current_user or current_user.role|lower != 'admin' %}
-          <div class="relative" x-data="{open:false}">
-            <button type="button" class="hover:text-esprit-red inline-flex items-center gap-1" @click="open=!open" aria-haspopup="true" :aria-expanded="open.toString()">
+          <div class="relative" id="careers-menu-wrapper">
+            <button type="button" id="careers-menu-btn" class="hover:text-esprit-red inline-flex items-center gap-1" aria-haspopup="true" aria-expanded="false">
               Carrières <span class="text-gray-500">▾</span>
             </button>
-            <div x-cloak x-show="open" x-transition.opacity.scale.origin.top @click.outside="open=false" class="absolute mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow z-50">
+            <div id="careers-menu" class="absolute hidden mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow z-50">
               <a href="/careers/opportunities/" class="block px-4 py-2 hover:bg-gray-50">Opportunités</a>
               {% if current_user and current_user.is_authenticated and current_user.role|lower != 'admin' %}
                 <a href="/careers/applications/" class="block px-4 py-2 hover:bg-gray-50">Mes candidatures</a>
@@ -149,7 +149,7 @@
           <a href="/contact/" class="hover:text-esprit-red">Contact</a>
         </div>
       </div>
-    </footer>
+  </footer>
   </div>
 
   <div class="fixed bottom-4 right-4 space-y-2 z-50">
@@ -158,15 +158,14 @@
     {% endfor %}
   </div>
 
-  <!-- HTMX CSRF support: attach Django CSRF token from cookie to HTMX requests -->
   <script>
+    // CSRF helper for HTMX
     function getCookie(name) {
       let cookieValue = null;
       if (document.cookie && document.cookie !== '') {
         const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
           const cookie = cookies[i].trim();
-          // Does this cookie string begin with the name we want?
           if (cookie.startsWith(name + '=')) {
             cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
             break;
@@ -175,11 +174,37 @@
       }
       return cookieValue;
     }
+    document.addEventListener('DOMContentLoaded', function() {
+      // Wire HTMX CSRF header
+      document.body.addEventListener('htmx:configRequest', function(event) {
+        const csrftoken = getCookie('csrftoken');
+        if (csrftoken) {
+          event.detail.headers['X-CSRFToken'] = csrftoken;
+        }
+      });
 
-    document.body.addEventListener('htmx:configRequest', function(event) {
-      const csrftoken = getCookie('csrftoken');
-      if (csrftoken) {
-        event.detail.headers['X-CSRFToken'] = csrftoken;
+      // Careers dropdown toggle (click + hover)
+      const wrapper = document.getElementById('careers-menu-wrapper');
+      const btn = document.getElementById('careers-menu-btn');
+      const menu = document.getElementById('careers-menu');
+      if (wrapper && btn && menu) {
+        const open = () => menu.classList.remove('hidden');
+        const close = () => menu.classList.add('hidden');
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          menu.classList.toggle('hidden');
+        });
+        // Optional hover open on desktop (no auto-close on leave)
+        wrapper.addEventListener('mouseenter', open);
+        // Click outside
+        document.addEventListener('click', (e) => {
+          if (!wrapper.contains(e.target)) close();
+        });
+        // Close on Escape
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') close();
+        });
       }
     });
   </script>
