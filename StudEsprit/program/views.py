@@ -52,6 +52,11 @@ def niveau_create(request):
             return redirect("niveaux_list")
     else:
         form = NiveauForm()
+    # If this is an HTMX request (e.g., loading inside a modal or panel),
+    # return the partial form that does not extend the base layout to avoid
+    # duplicating the whole page inside the current view.
+    if request.headers.get("Hx-Request") == "true":
+        return render(request, "program/_niveaux_form.html", {"form": form})
     return render(request, "program/niveau_form.html", {"form": form})
 
 
@@ -114,6 +119,10 @@ def niveau_edit(request: HttpRequest, nid=None):
             return redirect("niveaux_list")
     else:
         form = NiveauForm(initial={"nom": n.get("nom"), "description": n.get("description")})
+    # For edit GETs, we render a lightweight modal partial when called via HTMX
+    # to prevent embedding the full base template inside the current page.
+    if request.headers.get("Hx-Request") == "true":
+        return render(request, "program/_niveaux_edit.html", {"form": form, "nid": nid})
     return render(request, "program/niveau_form.html", {"form": form, "nid": nid})
 
 
@@ -327,6 +336,10 @@ def matiere_create(request: HttpRequest):
     else:
         form = MatiereForm()
     niveaux = services.list_niveaux(limit=200)
+    # Serve a partial (no base layout) when requested via HTMX to avoid
+    # duplicating the overall page structure inside the current interface.
+    if request.headers.get("Hx-Request") == "true":
+        return render(request, "program/_matieres_form.html", {"form": form, "niveaux": niveaux})
     return render(request, "program/matiere_form.html", {"form": form, "niveaux": niveaux})
 
 
@@ -355,6 +368,10 @@ def matiere_edit(request: HttpRequest, mid=None):
     else:
         form = MatiereForm(initial={"nom": m.get("nom"), "description": m.get("description"), "niveau_id": m.get("niveau_id"), "coefficient": m.get("coefficient")})
     niveaux = services.list_niveaux(limit=200)
+    # When opened via HTMX (edit button inside the panel), return the modal
+    # partial instead of the full page to avoid duplicated layout rendering.
+    if request.headers.get("Hx-Request") == "true":
+        return render(request, "program/_matieres_edit.html", {"form": form, "mid": mid, "niveaux": niveaux})
     return render(request, "program/matiere_form.html", {"form": form, "mid": mid, "niveaux": niveaux})
 
 
