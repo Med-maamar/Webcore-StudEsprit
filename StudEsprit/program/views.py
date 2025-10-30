@@ -8,8 +8,11 @@ from django.core.files.storage import default_storage
 from django.urls import reverse
 import tempfile
 import json
+import random
 from typing import Any, Dict
 from ml_service import average_analyzer
+from django.views.decorators.csrf import csrf_exempt
+from ml_service import generate_subjects_app as gen_app
 
 
 class NiveauForm(forms.Form):
@@ -221,6 +224,55 @@ def matieres_json(request):
         return JsonResponse({"ok": True, "count": len(out), "matieres": out})
     except Exception as e:
         return JsonResponse({"ok": False, "error": str(e)}, status=500)
+@csrf_exempt
+def generate_matieres_local(request: HttpRequest):
+    """Proxy endpoint that runs the local generator logic inside Django so the
+    generator appears under the same origin (no CORS) and can be called at
+    /program/api/generate_matieres/.
+
+    This view is intentionally csrf_exempt because the previous frontend calls
+    the external generator without sending a CSRF token. If you prefer stricter
+    checks, remove the decorator and ensure the client includes the CSRF token.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'error': 'POST required'}, status=405)
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except Exception:
+        payload = {}
+    niveau = (payload.get('niveau') or '').strip()
+    try:
+        count = int(payload.get('count') or 6)
+    except Exception:
+        count = 6
+    seed = payload.get('shuffle_seed')
+
+    data = gen_app.load_dataset()
+    if niveau:
+        filtered = [r for r in data if r.get('niveau_education', '').lower() == niveau.lower()]
+    else:
+        filtered = data
+
+    if seed is not None:
+        try:
+            random.seed(int(seed))
+        except Exception:
+            pass
+
+    if len(filtered) >= count:
+        sample = random.sample(filtered, count)
+    else:
+        sample = filtered[:]
+        remaining = [r for r in data if r not in filtered]
+        need = max(0, count - len(sample))
+        if need > 0 and remaining:
+            sample += random.sample(remaining, min(need, len(remaining)))
+
+    for s in sample:
+        if niveau:
+            s['suggested_for_niveau'] = niveau
+
+    return JsonResponse({'ok': True, 'count': len(sample), 'matieres': sample})
 
 
 def matiere_create(request: HttpRequest):
