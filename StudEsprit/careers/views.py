@@ -18,17 +18,83 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_mongoengine import viewsets as me_viewsets
 
-from .models import Application, CVProfile, Opportunity
+from .models import Application, CVProfile, Opportunity, Interview
 from .permissions import IsOwnerOrStaff, IsStaffOrReadOnly, _is_staff
 from .serializers import ApplicationSerializer, CVProfileSerializer, OpportunitySerializer
 from .services.ai_career import CareerAIService
 from .models import CoverLetter
+from .services.google_meet import generate_meet_link
+from accounts.services import find_user_by_id
+from bson import DBRef
+from bson import ObjectId
 
 
 class CareersPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = "page_size"
     max_page_size = 100
+
+
+def _safe_interview_info(app: Application):
+    """Return interview info without triggering lazy dereference errors.
+
+    If the reference points to a missing document, clear it on the Application.
+    """
+    try:
+        # Try raw value without triggering deref
+        ref = getattr(app, "_data", {}).get("interview")
+        if not ref:
+            ref = app.to_mongo().get("interview")
+        if not ref:
+            return None
+        # Normalize to string id
+        interview_id = None
+        if isinstance(ref, DBRef):
+            interview_id = str(ref.id)
+        elif isinstance(ref, ObjectId):
+            interview_id = str(ref)
+        elif isinstance(ref, str):
+            interview_id = ref
+        else:
+            # Could be a Document already loaded
+            interview_id = str(getattr(ref, "id", ""))
+        if not interview_id:
+            return None
+        iv = Interview.objects(pk=interview_id).first()
+        if iv is None:
+            # Clear broken reference without dereferencing
+            try:
+                Application.objects(id=app.id).update_one(unset__interview=1)
+            except Exception:
+                pass
+            return None
+        return iv
+    except Exception:
+        return None
+
+
+def _safe_opportunity(app: Application):
+    """Return the referenced Opportunity or None without raising on broken DBRef."""
+    try:
+        ref = getattr(app, "_data", {}).get("opportunity") or app.to_mongo().get("opportunity")
+        if not ref:
+            return None
+        from bson import DBRef, ObjectId  # local import
+
+        opp_id = None
+        if isinstance(ref, DBRef):
+            opp_id = str(ref.id)
+        elif isinstance(ref, ObjectId):
+            opp_id = str(ref)
+        elif isinstance(ref, str):
+            opp_id = ref
+        else:
+            opp_id = str(getattr(ref, "id", ""))
+        if not opp_id:
+            return None
+        return Opportunity.objects(pk=opp_id).first()
+    except Exception:
+        return None
 
 
 def _parse_bool(value: Optional[str]) -> Optional[bool]:
@@ -616,8 +682,12 @@ class MyApplicationsPageView(LoginRequiredMixin, TemplateView):
         user_id = str(getattr(self.request.user, "id", ""))
         apps = Application.objects(user_id=user_id).order_by("-created_at")
         profile = CVProfile.objects(user_id=user_id).first()
+        items = []
+        for app in apps:
+            iv = _safe_interview_info(app)
+            items.append({"app": app, "iv": iv})
         ctx.update({
-            "applications": apps,
+            "items": items,
             "profile": profile,
         })
         return ctx
@@ -657,5 +727,220 @@ class InterviewPrepDeleteView(LoginRequiredMixin, View):
         app.interview_prep = None
         app.save()
         resp = HttpResponse("", status=204)
+        resp["HX-Trigger"] = "applications-refresh"
+        return resp
+
+
+# -----------------------
+# Admin panel (staff only)
+# -----------------------
+
+
+def _require_staff(request: HttpRequest):
+    if not _is_staff(request.user):
+        raise Http404("Not found")
+
+
+class AdminApplicationsListView(LoginRequiredMixin, TemplateView):
+    template_name = "careers/admin_applications.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_staff(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        params = self.request.GET
+        qs = Application.objects
+        if params.get("status"):
+            qs = qs.filter(status=params.get("status"))
+        if params.get("opportunity"):
+            qs = qs.filter(opportunity=params.get("opportunity"))
+        if params.get("date"):
+            try:
+                dt = datetime.datetime.fromisoformat(params.get("date"))
+                qs = qs.filter(created_at__gte=dt)
+            except Exception:
+                pass
+        apps = qs.order_by("-created_at")
+        rows = []
+        for app in apps[:200]:
+            user = find_user_by_id(str(app.user_id)) if app.user_id else None
+            iv = _safe_interview_info(app)
+            rows.append({
+                "id": str(app.id),
+                "student": (user.get("username") if user else "?") + (f" <{user.get('email')}>" if user and user.get('email') else ""),
+                "opportunity": f"{app.opportunity.role} @ {app.opportunity.company}" if app.opportunity else "",
+                "status": app.status,
+                "interview": bool(iv),
+                "interview_id": str(iv.id) if iv else None,
+                "interview_dt": iv.date_time if iv else None,
+                "interview_link": iv.meet_link if iv else None,
+                "interview_duration": iv.duration if iv else None,
+                "created_at": app.created_at,
+                "cv_url": app.cv_url,
+            })
+        ctx.update({
+            "rows": rows,
+            "opportunities": Opportunity.objects.order_by("company")[:200],
+            "filters": {
+                "status": params.get("status", ""),
+                "opportunity": params.get("opportunity", ""),
+                "date": params.get("date", ""),
+            }
+        })
+        return ctx
+
+
+class AdminApplicationDetailView(LoginRequiredMixin, TemplateView):
+    template_name = "careers/admin_application_detail.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_staff(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        app = Application.objects(pk=self.kwargs.get("pk")).first()
+        if not app:
+            raise Http404("Application not found")
+        user = find_user_by_id(str(app.user_id)) if app.user_id else None
+        ctx.update({
+            "app": app,
+            "user": user,
+            "opportunity": app.opportunity,
+        })
+        return ctx
+
+
+class AdminApplicationInterviewView(LoginRequiredMixin, View):
+    template_name = "careers/admin_interview_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_staff(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request: HttpRequest, pk: str):
+        app = Application.objects(pk=pk).first()
+        if not app:
+            raise Http404("Application not found")
+        context = {"app": app}
+        return render(request, self.template_name, context)
+
+    def post(self, request: HttpRequest, pk: str):
+        app = Application.objects(pk=pk).first()
+        if not app:
+            raise Http404("Application not found")
+        date = request.POST.get("date")
+        time = request.POST.get("time")
+        duration = int(request.POST.get("duration")) if request.POST.get("duration") else 30
+        if not date or not time:
+            return render(request, self.template_name, {"app": app, "error": "Date et heure requises"}, status=400)
+        dt = datetime.datetime.fromisoformat(f"{date}T{time}")
+        if dt.tzinfo is None:
+            dt = timezone.make_aware(dt)
+        meet = generate_meet_link(f"Entretien {app.opportunity.role}", dt, duration)
+        # Always save a clean base URL without query params
+        if '?' in meet:
+            meet = meet.split('?', 1)[0]
+        # Avoid dereferencing a missing interview ref
+        interview = _safe_interview_info(app)
+        if interview is None:
+            interview = Interview(application=app, scheduled_by=str(request.user.id))
+        interview.date_time = dt
+        interview.duration = duration
+        interview.meet_link = meet
+        interview.status = "scheduled"
+        interview.save()
+        app.interview = interview
+        app.status = "interview"
+        app.save()
+        html = (
+            f"<div class='p-3 bg-green-50 border border-green-200 rounded text-green-700'>"
+            f"Entretien planifié: {dt.strftime('%Y-%m-%d %H:%M')} — <a class='underline text-esprit-red' href='{meet}' target='_blank'>Lien Meet</a>"
+            f"</div>"
+        )
+        resp = HttpResponse(html)
+        resp["HX-Trigger"] = "applications-refresh"
+        return resp
+
+
+class AdminInterviewUpdateView(LoginRequiredMixin, View):
+    def dispatch(self, request, *args, **kwargs):
+        _require_staff(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request: HttpRequest, pk: str) -> HttpResponse:
+        interview = Interview.objects(pk=pk).first()
+        if not interview:
+            raise Http404("Interview not found")
+        method = request.POST.get("_method", "").upper()
+        if method == "PATCH":
+            date = request.POST.get("date")
+            time = request.POST.get("time")
+            status_val = request.POST.get("status")
+            notes = request.POST.get("notes")
+            if date and time:
+                dt = datetime.datetime.fromisoformat(f"{date}T{time}")
+                if dt.tzinfo is None:
+                    dt = timezone.make_aware(dt)
+                interview.date_time = dt
+            if status_val:
+                interview.status = status_val
+            if notes is not None:
+                interview.notes = notes
+            interview.save()
+            resp = HttpResponse("<div class='p-2 text-green-700 bg-green-50 border border-green-200 rounded'>Mis à jour</div>")
+            resp["HX-Trigger"] = "applications-refresh"
+            return resp
+        return HttpResponse(status=405)
+
+
+class AdminInterviewDeleteView(LoginRequiredMixin, View):
+    def dispatch(self, request, *args, **kwargs):
+        _require_staff(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request: HttpRequest, pk: str) -> HttpResponse:
+        interview = Interview.objects(pk=pk).first()
+        if not interview:
+            raise Http404("Interview not found")
+        app = Application.objects(interview=interview).first()
+        if app:
+            app.interview = None
+            app.save()
+        interview.delete()
+        resp = HttpResponse("", status=204)
+        resp["HX-Trigger"] = "applications-refresh"
+        return resp
+
+
+class AdminApplicationValidateView(LoginRequiredMixin, View):
+    template_name = "careers/confirm_validate.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        _require_staff(request)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request: HttpRequest, pk: str) -> HttpResponse:
+        app = Application.objects(pk=pk).first()
+        if not app:
+            raise Http404("Application not found")
+        return render(request, self.template_name, {"app": app})
+
+    def post(self, request: HttpRequest, pk: str) -> HttpResponse:
+        app = Application.objects(pk=pk).first()
+        if not app:
+            raise Http404("Application not found")
+        app.status = "validated"
+        log = {"action": "validated", "by": str(request.user.id), "at": timezone.now().isoformat()}
+        app.decision_log = list(app.decision_log or []) + [log]
+        app.save()
+        opp = _safe_opportunity(app)
+        if opp:
+            opp.is_active = False
+            opp.save()
+        html = "<div class='p-2 bg-green-50 border border-green-200 text-green-700 rounded'>Candidature validée et opportunité désactivée.</div>"
+        resp = HttpResponse(html)
         resp["HX-Trigger"] = "applications-refresh"
         return resp

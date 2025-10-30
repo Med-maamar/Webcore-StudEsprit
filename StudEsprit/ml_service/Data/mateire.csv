@@ -1,0 +1,205 @@
+nom,description,coefficient,niveau
+"Blockchain et sécurité avancée","Technologies décentralisées et protocoles sécurisés.",2,4eme
+"Intelligence Artificielle Générative","Modèles de langage et génération de contenu.",3,5eme
+"Algorithmique Avancée","Structures de données complexes et optimisation.",3,3eme
+"Cloud Computing","Architecture et services cloud (AWS, Azure, GCP).",2,3eme
+"Cyberdéfense et Ethical Hacking","Techniques d'attaque et de défense en cybersécurité.",3,5eme
+"Big Data et Analytics","Traitement et visualisation de grandes masses de données.",3,4eme
+"Machine Learning Fondamental","Algorithmes supervisés et non supervisés.",3,3eme
+"Programmation Système en C","Gestion mémoire, processus et threads.",2,2eme
+"Développement Web Full Stack","HTML, CSS, JavaScript, Node.js, React.",3,3eme
+"Base de Données Avancées","Modélisation NoSQL et SQL optimisé.",2,3eme
+"Réseaux et Protocoles TCP/IP","Configuration et sécurité des réseaux.",2,2eme
+"Internet des Objets (IoT)","Capteurs, protocoles et applications connectées.",2,4eme
+"DevOps et Automatisation","CI/CD, Docker, Kubernetes.",3,5eme
+"Statistiques et Probabilités","Fondements pour l'analyse de données.",2,2eme
+"Programmation Fonctionnelle","Haskell, Scala, concepts avancés.",2,4eme
+"Vision par Ordinateur","Traitement d'images et deep learning visuel.",3,5eme
+"Ingénierie Logicielle","Méthodologies Agile, Scrum, UML.",2,3eme
+"Cryptographie Appliquée","Chiffrement, signatures, blockchain.",3,4eme
+"Data Engineering","Pipelines ETL et ingestion de données.",3,5eme
+"Robotique et Automates","Conception et programmation de robots.",2,4eme
+"Calcul Scientifique avec Python","NumPy, SciPy, simulations numériques.",2,3eme
+"Sécurité des Applications Web","OWASP, XSS, CSRF, injections SQL.",3,3eme
+"Apprentissage Profond (Deep Learning)","Réseaux de neurones, CNN, RNN.",3,5eme
+"Architecture des Ordinateurs","Processeurs, mémoire, assemblage.",2,2eme
+"Programmation Mobile Multiplateforme","Flutter, React Native, Kotlin.",3,3eme
+"Analyse de Données avec R","Statistiques descriptives et prédictives.",2,4eme
+"Virtualisation et Conteneurs","VMware, Docker, orchestration.",2,4eme
+"Intelligence Artificielle Éthique","Biais, transparence, responsabilité.",1,5eme
+"Projet Intégrateur - Année 1","Application complète d'un concept appris.",4,1er
+"Projet Intégrateur - Année 2","Projet d'équipe en contexte réel.",5,2eme
+"Stage en Entreprise","Expérience professionnelle de 3 mois.",6,5eme
+"Anglais Technique","Rédaction de rapports et présentations.",1,1er
+"Communication Professionnelle","CV, entretiens, networking.",1,1er
+"Entrepreneuriat et Innovation","Création de startup, business model.",2,4eme
+"Gestion de Projet Informatique","Planification, risques, suivi.",2,3eme
+"Introduction à la Recherche","Méthodologie et revue de littérature.",1,5eme
+"Théorie des Graphes","Algorithmes sur graphes et applications.",2,3eme
+"Compilation et Langages","Analyse lexicale, syntaxique, génération de code.",3,4eme
+"Systèmes Embarqués","Microcontrôleurs, RTOS, capteurs.",3,4eme
+"Bioinformatique","Algorithmes pour l'analyse génomique.",2,5eme
+"Finance Algorithmique","Trading haute fréquence et modélisation.",2,5eme
+"Jeux Vidéo et Moteurs Graphiques","Unity, Unreal Engine, shaders.",3,3eme
+"Réalité Virtuelle et Augmentée","Développement VR/AR avec Unity/Oculus.",3,4eme
+"Optimisation Combinatoire","Programmation linéaire, métaheuristiques.",2,4eme
+"Calcul Parallèle et GPU","CUDA, OpenCL, calcul haute performance.",3,5eme
+"Forensic Numérique","Récupération de données et analyse légale.",2,5eme
+"Administration Système Linux","Shell, services, sécurité.",2,3eme
+"Programmation Concurrente","Threads, mutex, deadlocks.",2,3eme
+"Interfaces Homme-Machine","UX/UI, ergonomie, accessibilité.",2,2eme
+"Simulation et Modélisation","Systèmes dynamiques, Monte Carlo.",2,4eme
+"Théorie de l'Information","Compression, codage, entropie.",2,3eme
+"Algorithmique Distribuée","Consensus, Paxos, Raft.",3,5eme
+"Data Privacy et RGPD","Protection des données personnelles.",2,4eme
+"Cloud Native Development","Microservices, serverless, Kubernetes.",3,5eme
+"Introduction à la Quantique","Qubits, algorithmes quantiques.",2,5eme
+"Edge Computing","Traitement local et faible latence.",2,4eme
+"Low-Code / No-Code","Plateformes de développement rapide.",1,3eme
+"Marketing Digital pour Développeurs","SEO, analytics, growth hacking.",1,2eme
+"Open Source et Contribution","GitHub, licences, collaboration.",1,3eme
+"Accessibilité Numérique","WCAG, développement inclusif.",1,3eme
+"Green IT","Informatique durable et éco-conception.",1,4eme
+"Leadership Technique","Gestion d'équipe tech, delegation.",1,5eme
+"Préparation à la Certification AWS","Cloud Practitioner et Solutions Architect.",2,4eme
+"Préparation à la Certification Azure","AZ-900 et AZ-104.",2,4eme
+"Préparation à la Certification Google Cloud","Associate Cloud Engineer.",2,4eme
+"Séminaire Industrie 4.0","IA, IoT et automatisation industrielle.",1,4eme
+"Séminaire Santé Numérique","Dossiers médicaux, télémédecine.",1,4eme
+"Séminaire FinTech","Paiements, blockchain, DeFi.",1,4eme
+"Introduction à la Blockchain Ethereum","Smart contracts, Solidity.",3,3eme
+"Introduction à la Blockchain Bitcoin","Script, mining, UTXO.",2,3eme
+"Web3 et DApps","Développement décentralisé, IPFS.",3,5eme
+"NFT et Métavers","Création et économie des tokens.",2,4eme
+"IA et Créativité","Génération d'art, musique, texte.",2,5eme
+"IA pour la Cybersécurité","Détection d'anomalies, threat hunting.",3,5eme
+"IA Explicable (XAI)","Interprétabilité des modèles.",2,5eme
+"Reinforcement Learning","Q-Learning, Deep RL, jeux.",3,5eme
+"Natural Language Processing","NLP avancé, transformers, BERT.",3,4eme
+"Computer Vision Avancée","Segmentation, détection d'objets.",3,5eme
+"Time Series Analysis","Prévision, ARIMA, LSTM.",2,4eme
+"Recommandation Systems","Filtrage collaboratif, contenu.",2,4eme
+"Graph Neural Networks","GNN, applications sur réseaux sociaux.",3,5eme
+"Federated Learning","Apprentissage décentralisé et privé.",2,5eme
+"AutoML","Automatisation du machine learning.",2,4eme
+"Quantum Machine Learning","Algorithmes quantiques pour ML.",2,5eme
+"Edge AI","Modèles légers sur appareils.",2,4eme
+"Responsible AI","Évaluation des risques éthiques.",1,5eme
+"AI Governance","Politiques et cadres réglementaires.",1,5eme
+"Projet IA Appliquée","Déploiement d'un modèle en production.",4,5eme
+"Projet Data Science","Pipeline complet : données → modèle → dashboard.",4,4eme
+"Projet Cybersécurité","Audit et pentest d'une application.",4,5eme
+"Projet Blockchain","DApp fonctionnelle sur testnet.",4,5eme
+"Projet IoT","Prototype connecté avec capteur.",3,3eme
+"Projet Mobile","Application native ou hybride publiée.",3,3eme
+"Projet Web","Site full stack avec authentification.",3,3eme
+"Projet DevOps","Infrastructure as Code, CI/CD.",3,5eme
+"Projet Cloud","Architecture serverless scalable.",3,5eme
+"Projet VR/AR","Expérience immersive fonctionnelle.",3,4eme
+"Projet Jeu Vidéo","Jeu 2D/3D jouable.",3,3eme
+"Projet Robotique","Robot autonome avec capteurs.",3,4eme
+"Projet Bioinformatique","Analyse de séquences ADN.",3,5eme
+"Projet Finance Tech","Bot de trading simulé.",3,5eme
+"Projet Santé","Application de suivi médical.",3,4eme
+"Projet Écologie","Dashboard de données environnementales.",3,4eme
+"Projet Éducation","Plateforme e-learning personnalisée.",3,3eme
+"Projet Social","Réseau social thématique.",3,3eme
+"Projet Open Data","API publique avec données ouvertes.",3,4eme
+"Projet Accessibilité","Application conforme WCAG.",2,3eme
+"Projet Green IT","Optimisation énergétique d'une app.",2,4eme
+"Projet Low-Code","Solution métier sans code.",2,3eme
+"Projet No-Code","Automatisation de processus.",1,2eme
+"Projet Startup","MVP validé par utilisateurs.",5,5eme
+"Projet Recherche","Article scientifique court.",3,5eme
+"Projet Innovation","Brevet ou concept original.",3,5eme
+"Projet Open Source","Contribution significative à un repo.",2,3eme
+"Projet Mentoré","Accompagnement d'un junior.",1,5eme
+"Projet Interdisciplinaire","IA + Art / Design / Musique.",3,4eme
+"Projet International","Collaboration avec étudiants étrangers.",2,4eme
+"Projet Humanitaire","Solution tech pour une ONG.",2,3eme
+"Projet Culturel","Application patrimoniale ou muséale.",2,3eme
+"Projet Sport","Analyse de performance sportive.",2,3eme
+"Projet Tourisme","Application de voyage intelligente.",2,3eme
+"Projet Immobilier","Plateforme de visualisation 3D.",2,4eme
+"Projet Automobile","Système embarqué simulé.",2,4eme
+"Projet Aéronautique","Simulation de vol basique.",2,5eme
+"Projet Spatial","Analyse de données satellite.",2,5eme
+"Projet Énergie","Prédiction de consommation.",2,4eme
+"Projet Agriculture","IoT pour agriculture de précision.",2,4eme
+"Projet Alimentation","Traçabilité alimentaire via blockchain.",2,4eme
+"Projet Mode","IA pour design de vêtements.",2,4eme
+"Projet Luxe","Expérience client digitale.",2,4eme
+"Projet Média","Plateforme de streaming personnalisé.",2,4eme
+"Projet Journalisme","Outil d'analyse de fake news.",2,4eme
+"Projet Politique","Visualisation de données électorales.",2,4eme
+"Projet Éthique","Audit IA d'une entreprise fictive.",2,5eme
+"Projet Inclusion","Application pour malvoyants.",2,3eme
+"Projet Seniors","Interface adaptée aux personnes âgées.",2,2eme
+"Projet Enfants","Jeu éducatif interactif.",2,1er
+"Projet Animaux","Application de suivi vétérinaire.",1,1er
+"Projet Végétal","IA pour reconnaissance de plantes.",1,2eme
+"Projet Océan","Suivi de la pollution marine.",1,3eme
+"Projet Climat","Modélisation locale du changement.",1,4eme
+"Projet Forêt","Cartographie et suivi forestier.",1,4eme
+"Projet Montagne","Application de sécurité en randonnée.",1,3eme
+"Projet Ville","Smart city dashboard.",2,4eme
+"Projet Transport","Optimisation des trajets.",2,4eme
+"Projet Vélo","Application de vélopartage.",1,2eme
+"Projet Voiture","Système d'aide à la conduite.",2,4eme
+"Projet Train","Prédiction de retards ferroviaires.",1,3eme
+"Projet Avion","Optimisation de routes aériennes.",2,5eme
+"Projet Bateau","Suivi de flotte maritime.",1,3eme
+"Projet Drone","Pilotage autonome basique.",2,4eme
+"Projet Satellite","Réception de données open.",1,5eme
+"Projet Télescope","Traitement d'images astronomiques.",1,5eme
+"Projet Particules","Simulation basique en physique.",1,5eme
+"Projet Chimie","Modélisation moléculaire simple.",1,5eme
+"Projet Biologie","Analyse de génomes open data.",1,4eme
+"Projet Médecine","Prédiction de maladies.",2,5eme
+"Projet Psychologie","Application de thérapie digitale.",1,4eme
+"Projet Sociologie","Analyse de réseaux sociaux.",1,3eme
+"Projet Économie","Modèle prédictif macro.",1,4eme
+"Projet Droit","Outil d'analyse de contrats.",1,4eme
+"Projet Philosophie","IA et éthique (essai).",1,5eme
+"Projet Art","Génération d'œuvres par IA.",1,4eme
+"Projet Musique","Composition assistée par IA.",1,4eme
+"Projet Danse","Capture de mouvement.",1,3eme
+"Projet Théâtre","Application de mise en scène.",1,2eme
+"Projet Cinéma","Montage automatique basique.",1,3eme
+"Projet Photo","Retouche IA avancée.",1,3eme
+"Projet Design","Générateur de logos IA.",1,3eme
+"Projet Architecture","Maquette 3D générative.",1,4eme
+"Projet Urbanisme","Simulation de quartier.",1,4eme
+"Projet Paysage","Conception de jardins virtuels.",1,3eme
+"Projet Histoire","Reconstitution 3D historique.",1,3eme
+"Projet Archéologie","Scan 3D de sites.",1,5eme
+"Projet Langues","Traducteur neuronal local.",1,3eme
+"Projet Journal","Générateur d'articles.",1,3eme
+"Projet Radio","Podcast synthétique.",1,2eme
+"Projet TV","Générateur de scripts.",1,3eme
+"Projet Jeux de Société","IA adversaire.",1,2eme
+"Projet Échecs","Moteur d'échecs simple.",1,3eme
+"Projet Go","IA pour jeu de Go basique.",1,5eme
+"Projet Poker","Bot de poker probabiliste.",1,4eme
+"Projet Tarot","IA prédictive (fun).",1,1er
+"Projet Magie","Application de tours digitaux.",1,1er
+"Projet Cuisine","Générateur de recettes.",1,2eme
+"Projet Vin","IA sommelier.",1,3eme
+"Projet Mode","Conseiller styliste IA.",1,3eme
+"Projet Beauté","Diagnostic peau IA.",1,2eme
+"Projet Sport","Coach virtuel.",1,2eme
+"Projet Yoga","Suivi de postures.",1,1er
+"Projet Méditation","Guide audio IA.",1,1er
+"Projet Sommeil","Analyse de cycles.",1,1er
+"Projet Rêves","Journal de rêves IA.",1,1er
+"Projet Émotions","Détecteur d'humeur.",1,1er
+"Projet Bonheur","Suivi du bien-être.",1,1er
+"Projet Amitié","Matching social IA.",1,1er
+"Projet Amour","Conseiller relationnel.",1,1er
+"Projet Famille","Arbre généalogique IA.",1,1er
+"Projet Animaux","Traducteur aboiements (fun).",1,1er
+"Projet Plantes","Conseiller jardinage IA.",1,1er
+"Projet Étoiles","Constellation interactive.",1,1er
+"Projet Univers","Simulation cosmologique.",1,5eme
+"Projet Temps","Prédiction météo locale.",1,2eme
+"Projet Fin","Projet de fin d'études.",10,5eme

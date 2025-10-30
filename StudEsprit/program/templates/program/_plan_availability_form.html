@@ -1,0 +1,129 @@
+{% comment %}
+Partial returned via HTMX when the user clicks "Générer planning".
+This shows a day/hour grid where the user marks times they are NOT available.
+When the form is submitted we serialize selections into a hidden `unavailable`
+JSON string and POST it to the real generator endpoint which will return the
+calendar partial into #plan-area.
+{% endcomment %}
+
+<div class="p-4 bg-gray-50 rounded-lg border">
+  <h3 class="text-lg font-semibold mb-2">Temps indisponible — indiquez quand vous n'êtes pas disponible</h3>
+  <form id="availability-form" method="post" hx-post="{% url 'program_public_generate_plan' niveau.id %}" hx-target="#plan-area" hx-swap="innerHTML">
+    {% csrf_token %}
+    <input type="hidden" name="unavailable" id="id_unavailable" value="{}" />
+    <div class="mb-3">
+      <label class="block text-sm text-gray-700">Heures totales par semaine (approx.)</label>
+      <input type="number" name="total_hours_per_week" value="20" min="1" class="mt-1 px-3 py-2 rounded border" />
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr>
+            <th class="p-2 text-left">Jour</th>
+            <th class="p-2 text-left">Heures (cochez les heures où vous n'êtes pas disponible)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for key,label in days %}
+          <tr class="border-t">
+            <td class="p-2 align-top font-medium">{{ label }}</td>
+            <td class="p-2">
+              <div class="flex flex-wrap gap-2">
+                {% for h in hours %}
+                  <label class="inline-flex items-center px-2 py-1 border rounded text-xs bg-white">
+                    <input type="checkbox" class="availability-checkbox" data-day="{{ key }}" data-hour="{{ h }}" />
+                    <span class="ml-1">{{ h }}h</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 flex gap-2">
+      <button type="submit" class="px-3 py-2 bg-esprit-red text-white rounded">Générer le planning</button>
+      <button type="button" id="availability-cancel" class="px-3 py-2 border rounded">Annuler</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function(){
+  const form = document.getElementById('availability-form');
+  const hidden = document.getElementById('id_unavailable');
+  const cancel = document.getElementById('availability-cancel');
+
+  if(!form) return;
+  console.log('[availability] form script initialized');
+  function buildUnavailableMap(){
+    const checkboxes = document.querySelectorAll('.availability-checkbox');
+    const map = {};
+    checkboxes.forEach(cb => {
+      if(cb.checked){
+        const day = cb.getAttribute('data-day');
+        const hour = parseInt(cb.getAttribute('data-hour'));
+        if(!map[day]) map[day] = [];
+        map[day].push(hour);
+      }
+    });
+    return map;
+  }
+
+  form.addEventListener('submit', function(e){
+    const map = buildUnavailableMap();
+    hidden.value = JSON.stringify(map);
+    // debug: print to console so you can see what will be sent
+    try{
+      console.log('[availability] submitting unavailable map:', map);
+    }catch(_){ }
+    // allow HTMX to submit the form normally
+  });
+
+  // HTMX may trigger requests without a normal form submit event in some flows.
+  // Ensure the hidden input is up-to-date before any HTMX request originates.
+  if(window.htmx){
+    document.body.addEventListener('htmx:configRequest', function(evt){
+      try{
+        // evt.detail.elt is the element that initiated the request
+        const initiator = evt.detail && evt.detail.elt;
+        if(!initiator) return;
+        // if the request is coming from our form (or a child), update the payload
+        if(initiator.closest && initiator.closest('#availability-form')){
+          const map = buildUnavailableMap();
+          hidden.value = JSON.stringify(map);
+          console.log('[availability][htmx] configured request - unavailable map:', map);
+        }
+      }catch(_){ }
+    });
+  }
+
+  // live update and debug when a single checkbox is toggled - delegate to body so
+  // this still works even if HTMX replaces the form later.
+  document.body.addEventListener('change', function(ev){
+    try{
+      const target = ev.target || ev.srcElement;
+      if(target && target.classList && target.classList.contains('availability-checkbox')){
+        const day = target.getAttribute('data-day');
+        const hour = target.getAttribute('data-hour');
+        const checked = !!target.checked;
+        // rebuild map and update hidden input immediately
+        const map = buildUnavailableMap();
+        hidden.value = JSON.stringify(map);
+        console.log('[availability][change] checkbox', day, hour, 'checked=', checked, 'map=', map);
+      }
+    }catch(_){ }
+  });
+
+  if(cancel){
+    cancel.addEventListener('click', function(){
+      // clear the plan area by replacing with empty string (HTMX swap)
+      const planArea = document.getElementById('plan-area');
+      if(planArea) planArea.innerHTML = '';
+    });
+  }
+})();
+</script>

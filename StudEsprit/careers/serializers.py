@@ -13,6 +13,7 @@ from .models import (
     ProfileLink,
     Project,
     STATUS_CHOICES,
+    Interview,
 )
 
 
@@ -84,11 +85,13 @@ class ApplicationSerializer(me_serializers.DocumentSerializer):
             "cv_url",
             "cover_url",
             "cover_text",
+            "interview",
+            "decision_log",
             "notes",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("created_at", "updated_at")
+        read_only_fields = ("created_at", "updated_at", "interview", "decision_log")
 
     def validate_status(self, value: str) -> str:
         if value not in STATUS_CHOICES:
@@ -120,6 +123,35 @@ class ApplicationSerializer(me_serializers.DocumentSerializer):
     def update(self, instance: Application, validated_data: dict[str, Any]) -> Application:
         validated_data.pop("user_id", None)
         return super().update(instance, validated_data)
+
+
+class InterviewSerializer(me_serializers.DocumentSerializer):
+    id = serializers.CharField(read_only=True, source="pk")
+    application = serializers.CharField()
+
+    class Meta:
+        model = Interview
+        fields = (
+            "id",
+            "application",
+            "scheduled_by",
+            "date_time",
+            "duration",
+            "meet_link",
+            "status",
+            "notes",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("created_at", "updated_at")
+
+    def create(self, validated_data):
+        app_id = validated_data.pop("application")
+        app = Application.objects(pk=str(app_id)).first()
+        if not app:
+            raise serializers.ValidationError({"application": "Not found"})
+        validated_data["application"] = app
+        return super().create(validated_data)
 
 
 class CVProfileSerializer(me_serializers.DocumentSerializer):

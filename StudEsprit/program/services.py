@@ -31,11 +31,23 @@ def create_niveau(nom: str, description: str) -> Dict[str, Any]:
 
 def get_niveau(niveau_id) -> Optional[Dict[str, Any]]:
     db = get_db()
+    # Be tolerant with id shapes: try ObjectId, string _id, or 'id' field
+    candidates = []
     try:
         oid = ObjectId(niveau_id)
+        candidates.append({"_id": oid})
     except Exception:
-        oid = niveau_id
-    return db[COLLECTION_NAME].find_one({"_id": oid})
+        pass
+    candidates.append({"_id": niveau_id})
+    candidates.append({"id": niveau_id})
+    try:
+        return db[COLLECTION_NAME].find_one({"$or": candidates})
+    except Exception:
+        # fallback to original behavior
+        try:
+            return db[COLLECTION_NAME].find_one({"_id": niveau_id})
+        except Exception:
+            return None
 
 
 def list_niveaux(q: Optional[str] = None, limit: int = 100, skip: int = 0) -> List[Dict[str, Any]]:
@@ -50,6 +62,21 @@ def list_niveaux(q: Optional[str] = None, limit: int = 100, skip: int = 0) -> Li
     for d in docs:
         d["id"] = str(d.get("_id"))
     return docs
+
+
+def count_niveaux(q: Optional[str] = None) -> int:
+    db = get_db()
+    query: Dict[str, Any] = {}
+    if q:
+        query["nom"] = {"$regex": q, "$options": "i"}
+    try:
+        return int(db[COLLECTION_NAME].count_documents(query))
+    except Exception:
+        # fallback for older drivers or errors
+        try:
+            return len(list(db[COLLECTION_NAME].find(query)))
+        except Exception:
+            return 0
 
 
 def update_niveau(niveau_id, data: Dict[str, Any]) -> bool:
@@ -119,7 +146,7 @@ def delete_niveau(niveau_id) -> bool:
 MATIERE_COLLECTION = "matieres"
 
 
-def create_matiere(nom: str, description: str, niveau_id) -> Dict[str, Any]:
+def create_matiere(nom: str, description: str, niveau_id, coefficient: float = None) -> Dict[str, Any]:
     db = get_db()
     doc = {
         "nom": nom,
@@ -127,6 +154,12 @@ def create_matiere(nom: str, description: str, niveau_id) -> Dict[str, Any]:
         "niveau_id": niveau_id,
         "created_at": datetime.utcnow(),
     }
+    # store coefficient on matiere when provided (backwards compatible)
+    if coefficient is not None:
+        try:
+            doc['coefficient'] = float(coefficient)
+        except Exception:
+            doc['coefficient'] = coefficient
     result = db[MATIERE_COLLECTION].insert_one(doc)
     doc["_id"] = result.inserted_id
     doc["id"] = str(result.inserted_id)
@@ -135,11 +168,23 @@ def create_matiere(nom: str, description: str, niveau_id) -> Dict[str, Any]:
 
 def get_matiere(matiere_id) -> Optional[Dict[str, Any]]:
     db = get_db()
+    # Accept several id shapes: ObjectId, string _id, or stored `id` field
+    candidates = []
     try:
         oid = ObjectId(matiere_id)
+        candidates.append({"_id": oid})
     except Exception:
-        oid = matiere_id
-    return db[MATIERE_COLLECTION].find_one({"_id": oid})
+        pass
+    candidates.append({"_id": matiere_id})
+    candidates.append({"id": matiere_id})
+    try:
+        return db[MATIERE_COLLECTION].find_one({"$or": candidates})
+    except Exception:
+        # fallback: try simplest lookup
+        try:
+            return db[MATIERE_COLLECTION].find_one({"_id": matiere_id})
+        except Exception:
+            return None
 
 
 def list_matieres(q: Optional[str] = None, niveau_id=None, limit: int = 100, skip: int = 0) -> List[Dict[str, Any]]:
@@ -154,6 +199,22 @@ def list_matieres(q: Optional[str] = None, niveau_id=None, limit: int = 100, ski
     for d in docs:
         d["id"] = str(d.get("_id"))
     return docs
+
+
+def count_matieres(q: Optional[str] = None, niveau_id=None) -> int:
+    db = get_db()
+    query: Dict[str, Any] = {}
+    if q:
+        query["nom"] = {"$regex": q, "$options": "i"}
+    if niveau_id:
+        query["niveau_id"] = niveau_id
+    try:
+        return int(db[MATIERE_COLLECTION].count_documents(query))
+    except Exception:
+        try:
+            return len(list(db[MATIERE_COLLECTION].find(query)))
+        except Exception:
+            return 0
 
 
 def update_matiere(matiere_id, data: Dict[str, Any]) -> bool:
@@ -225,11 +286,22 @@ def create_cour(nom: str, description: str, coefficient: float, matiere_id, cour
 
 def get_cour(cour_id) -> Optional[Dict[str, Any]]:
     db = get_db()
+    # Accept ObjectId or string id forms
+    candidates = []
     try:
         oid = ObjectId(cour_id)
+        candidates.append({"_id": oid})
     except Exception:
-        oid = cour_id
-    return db[COURS_COLLECTION].find_one({"_id": oid})
+        pass
+    candidates.append({"_id": cour_id})
+    candidates.append({"id": cour_id})
+    try:
+        return db[COURS_COLLECTION].find_one({"$or": candidates})
+    except Exception:
+        try:
+            return db[COURS_COLLECTION].find_one({"_id": cour_id})
+        except Exception:
+            return None
 
 
 def list_cours(q: Optional[str] = None, matiere_id=None, limit: int = 100, skip: int = 0) -> List[Dict[str, Any]]:
@@ -244,6 +316,22 @@ def list_cours(q: Optional[str] = None, matiere_id=None, limit: int = 100, skip:
     for d in docs:
         d["id"] = str(d.get("_id"))
     return docs
+
+
+def count_cours(q: Optional[str] = None, matiere_id=None) -> int:
+    db = get_db()
+    query: Dict[str, Any] = {}
+    if q:
+        query["nom"] = {"$regex": q, "$options": "i"}
+    if matiere_id:
+        query["matiere_id"] = matiere_id
+    try:
+        return int(db[COURS_COLLECTION].count_documents(query))
+    except Exception:
+        try:
+            return len(list(db[COURS_COLLECTION].find(query)))
+        except Exception:
+            return 0
 
 
 def update_cour(cour_id, data: Dict[str, Any]) -> bool:

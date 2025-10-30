@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 
-STATUS_CHOICES = ("draft", "submitted", "interview", "offered", "rejected")
+STATUS_CHOICES = ("draft", "submitted", "interview", "offered", "rejected", "validated")
 
 
 def _normalize_list(values: List[str]) -> List[str]:
@@ -88,6 +88,9 @@ class Application(me.Document):
     cover_url = me.StringField()
     cover_text = me.StringField()
     interview_prep = me.DictField()
+    # Admin features
+    interview = me.ReferenceField('Interview', null=True)
+    decision_log = me.ListField(me.DictField(), default=list)
     notes = me.StringField()
     created_at = me.DateTimeField(default=timezone.now)
     updated_at = me.DateTimeField(default=timezone.now)
@@ -126,6 +129,8 @@ class Application(me.Document):
             "coverUrl": self.cover_url,
             "coverText": self.cover_text,
             "interviewPrep": self.interview_prep,
+            "interviewId": str(self.interview.id) if self.interview else None,
+            "decisionLog": self.decision_log,
             "notes": self.notes,
             "createdAt": self.created_at.isoformat() if self.created_at else None,
             "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
@@ -209,3 +214,27 @@ class CoverLetter(me.Document):
         "indexes": ["user_id", "created_at"],
         "ordering": ["-created_at"],
     }
+
+
+class Interview(me.Document):
+    application = me.ReferenceField('Application', required=True, reverse_delete_rule=me.CASCADE)
+    scheduled_by = me.StringField(required=True)
+    date_time = me.DateTimeField(required=True)
+    duration = me.IntField(default=30)
+    meet_link = me.StringField()
+    status = me.StringField(choices=["scheduled", "done", "cancelled"], default="scheduled")
+    notes = me.StringField()
+    created_at = me.DateTimeField(default=timezone.now)
+    updated_at = me.DateTimeField(default=timezone.now)
+
+    meta = {
+        "collection": "careers_interviews",
+        "indexes": ["application", "date_time", "status"],
+        "ordering": ["-date_time"],
+    }
+
+    def save(self, *args: Any, **kwargs: Any):  # type: ignore[override]
+        self.updated_at = timezone.now()
+        if not self.created_at:
+            self.created_at = self.updated_at
+        return super().save(*args, **kwargs)

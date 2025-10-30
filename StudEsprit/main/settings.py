@@ -11,10 +11,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
 DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"}
+# For local development, avoid hardcoding HTTPS origins to prevent HTTPS-only behavior.
+# Uncomment the production origin below when deploying.
+# CSRF_TRUSTED_ORIGINS = ['https://webcore-studesprit.onrender.com']
+# CSRF Trusted Origins — FIXED FOR PRODUCTION
 CSRF_TRUSTED_ORIGINS = [
     'https://webcore-studesprit.onrender.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
 ]
-ALLOWED_HOSTS = ['webcore-studesprit.onrender.com', 'localhost', '127.0.0.1']
+
+# ALLOWED_HOSTS — PERFECT
+ALLOWED_HOSTS = [
+    'webcore-studesprit.onrender.com',
+    'localhost',
+    '127.0.0.1',
+]
 
 APP_VERSION = "0.1.0"
 
@@ -69,6 +81,10 @@ WSGI_APPLICATION = "main.wsgi.application"
 
 DATABASES = {
     "default": {
+        # Use a lightweight sqlite3 database for Django ORM-backed apps in development.
+        # The project primarily uses MongoDB for most data, but some apps (events, admin)
+        # still rely on Django models, so provide a local sqlite DB to avoid
+        # "ENGINE" misconfiguration errors during template rendering or admin use.
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     }

@@ -17,6 +17,10 @@
         <p id="selected-niveau" class="mt-2 text-sm text-gray-600">Niveau sélectionné: <span id="selected-niveau-name">Aucun</span></p>
       </div>
       <div>
+        <label for="id_coefficient" class="block text-sm font-semibold text-gray-800 mb-1">Coefficient (optionnel)</label>
+        <input id="id_coefficient" name="coefficient" type="number" step="0.1" value="{{ form.coefficient.value|default_if_none:'' }}" class="w-full px-3 py-2 rounded-xl border border-gray-300" />
+      </div>
+      <div>
         <label for="id_description" class="block text-sm font-semibold text-gray-800 mb-1">Description</label>
         <textarea id="id_description" name="description" rows="3" class="w-full px-3 py-2 rounded-xl border border-gray-300 focus:border-esprit-red focus:ring-esprit-red">{{ form.description.value|default_if_none:'' }}</textarea>
       </div>
