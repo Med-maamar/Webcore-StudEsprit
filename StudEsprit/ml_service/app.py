@@ -1,46 +1,43 @@
-# ml_service/generator.py
-import fitz  # PyMuPDF
-import openai
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+# Support running as a package (python -m ml_service.app) and as a script
+try:
+    # preferred when running as a package
+    from .generator import generate_questions_from_text
+except Exception:
+    # fallback when running python app.py directly from the ml_service folder
+    from generator import generate_questions_from_text
+import tempfile
 import os
+import traceback
 
-# Set your OpenAI key (from Render env vars)
-openai.api_key = os.getenv("OPENAI_API_KEY")
+app = Flask(__name__)
+CORS(app)
 
-def generate_questions_from_text(pdf_path):
-    """
-    Extract text from PDF → Send to OpenAI → Return questions
-    """
-    # 1. Extract text
-    doc = fitz.open(pdf_path)
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    doc.close()
 
-    if not text.strip():
-        return [{"question": "No text found in PDF", "answer": "Check file"}]
-
-    # 2. Call OpenAI
+@app.route('/api/generate-from-pdf', methods=['POST'])
+def generate_from_pdf():
     try:
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a quiz generator. Create 5 multiple-choice questions from the text. Format: Q1: ..., Options: A)..., B)..., Answer: A"},
-                {"role": "user", "content": f"Text: {text[:3000]}"}
-            ],
-            max_tokens=500
-        )
-        raw = response.choices[0].message.content
-
-        # 3. Parse into list
-        questions = []
-        for line in raw.split('\n'):
-            if line.strip() and ('Q' in line or 'Question' in line):
-                questions.append({
-                    "question": line.strip(),
-                    "answer": "See options"
-                })
-        return questions or [{"question": raw, "answer": "AI response"}]
-
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file uploaded'}), 400
+        f = request.files['file']
+        # save to temp
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            f.save(tmp.name)
+            tmp_path = tmp.name
+        try:
+            questions = generate_questions_from_text(tmp_path)
+        finally:
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
+        return jsonify({'questions': questions})
     except Exception as e:
-        return [{"question": "AI Error", "answer": str(e)}]
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5002)
