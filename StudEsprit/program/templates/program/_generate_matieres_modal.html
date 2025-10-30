@@ -42,7 +42,13 @@
 </div>
 
 <script>
+<<<<<<< HEAD
+// Default to the same-origin Django proxy so the generator runs under
+// http://127.0.0.1:8000 when Django is serving the app. Override via
+// window.GENERATOR_URL if you need to point to an external generator.
+=======
 // Requires: the Flask generator running at http://localhost:5002 by default
+>>>>>>> bd93feacce21fc3136aa30f2f42a86b7a4419aba
 const GENERATOR_URL = window.GENERATOR_URL || '/program/api/generate_matieres/';
 
 function openGenerateModal() {
@@ -121,71 +127,83 @@ if (genRunBtn) {
       item.className = 'p-2 border rounded flex justify-between items-start gap-2';
       // attach the selected niveau id so creation links the matiere to the right niveau document
       const m_with_nid = Object.assign({}, m, {niveau_id: niveauId});
-      // encode JSON payload to avoid HTML quoting issues
-      const payloadAttr = encodeURIComponent(JSON.stringify(m_with_nid));
       item.innerHTML = `<div class="flex-1">
           <strong>${escapeHtml(m.nom)}</strong>
           <div class="text-sm text-gray-600">Coef: ${m.coefficient} • Niveau: ${m.niveau || m.niveau_education || ''}</div>
           <div class="text-sm mt-1">${escapeHtml(m.description)}</div>
         </div>
         <div class="flex-shrink-0">
-          <button class="add-matiere-btn bg-green-600 text-white px-2 py-1 rounded" data-m='${payloadAttr}'>Ajouter</button>
+          <button class="add-matiere-btn bg-green-600 text-white px-2 py-1 rounded">Ajouter</button>
         </div>`;
       results.appendChild(item);
-    }
-    // use event delegation for add buttons and provide better feedback
-    results.addEventListener('click', async (ev) => {
-      const btn = ev.target.closest && ev.target.closest('.add-matiere-btn');
-      if (!btn) return;
-      try {
-        btn.textContent = 'Ajout...';
-        btn.disabled = true;
-        const raw = btn.getAttribute('data-m') || '';
-        const data = JSON.parse(decodeURIComponent(raw));
-        const createUrl = window.MATIERE_CREATE_URL || '/program/matieres/create/';
-        const csrf = getCSRF();
-        console.debug('Creating matiere', data, 'to', createUrl);
-        const r = await postJSON(createUrl, data, csrf);
-        if (r.ok) {
-          let body = null;
-          try {
-            body = await r.json();
-            console.debug('Create response', body);
-          } catch (e) {
-            // no-op
-          }
-          btn.textContent = 'Ajouté';
-          btn.classList.remove('bg-green-600');
-          btn.classList.add('bg-gray-400');
-          btn.disabled = true;
 
-          // try refresh the matieres panel so the admin sees the new entry
-          try {
-            const panel = document.getElementById('matieres-panel');
-            if (panel) {
-              const panelResp = await fetch(window.location.origin + '/program/matieres/panel', {credentials: 'include'});
-              if (panelResp.ok) {
-                const html = await panelResp.text();
-                // replace the panel in-place
-                panel.outerHTML = html;
+      // bind the payload object directly to the button and attach a click handler
+      const addBtn = item.querySelector('.add-matiere-btn');
+      if (addBtn) {
+        addBtn._matiere = m_with_nid;
+        addBtn.addEventListener('click', async (ev) => {
+          const btn = ev.currentTarget;
+            try {
+            btn.textContent = 'Ajout...';
+            btn.disabled = true;
+            const data = btn._matiere;
+            const createUrl = window.MATIERE_CREATE_URL || '/program/matieres/create/';
+            const csrf = getCSRF();
+            console.debug('Creating matiere (form submit) ', data, 'to', createUrl);
+
+            // Build FormData and submit as form POST to avoid JSON encoding/parsing issues
+            const fd = new FormData();
+            fd.append('nom', data.nom || '');
+            fd.append('description', data.description || '');
+            if (data.coefficient !== undefined && data.coefficient !== null) fd.append('coefficient', String(data.coefficient));
+            if (data.niveau_id) fd.append('niveau_id', data.niveau_id);
+
+            const headers = {};
+            if (csrf) headers['X-CSRFToken'] = csrf;
+
+            const r = await fetch(createUrl, {method: 'POST', body: fd, credentials: 'include', headers});
+            if (r.ok) {
+              try {
+                const body = await r.json();
+                console.debug('Create response', body);
+              } catch (e) {
+                // non-JSON response; ignore
+                console.debug('Create returned non-JSON response');
               }
+              btn.textContent = 'Ajouté';
+              btn.classList.remove('bg-green-600');
+              btn.classList.add('bg-gray-400');
+              btn.disabled = true;
+
+              // try refresh the matieres panel so the admin sees the new entry
+              try {
+                const panel = document.getElementById('matieres-panel');
+                if (panel) {
+                  const panelResp = await fetch(window.location.origin + '/program/matieres/panel', {credentials: 'include'});
+                  if (panelResp.ok) {
+                    const html = await panelResp.text();
+                    // replace the panel in-place
+                    panel.outerHTML = html;
+                  }
+                }
+              } catch (refreshErr) {
+                console.warn('Could not refresh matieres panel', refreshErr);
+              }
+            } else {
+              const txt = await r.text();
+              console.error('Add failed', r.status, txt);
+              btn.textContent = 'Échec';
+              btn.disabled = false;
+              alert('Échec ajout: ' + r.status + '\n' + txt);
             }
-          } catch (refreshErr) {
-            console.warn('Could not refresh matieres panel', refreshErr);
+          } catch (err) {
+            console.error('Exception while adding matiere', err);
+            try { btn.textContent = 'Erreur'; btn.disabled = false; } catch(e){}
+            alert('Erreur lors de l\'ajout : ' + (err && err.message ? err.message : String(err)));
           }
-        } else {
-          const txt = await r.text();
-          console.error('Add failed', r.status, txt);
-          btn.textContent = 'Échec';
-          btn.disabled = false;
-          alert('Échec ajout: ' + r.status + '\n' + txt);
-        }
-      } catch (err) {
-        console.error('Exception while adding matiere', err);
-        try { btn.textContent = 'Erreur'; btn.disabled = false; } catch(e){}
-        alert('Erreur lors de l\'ajout : ' + (err && err.message ? err.message : String(err)));
+        });
       }
-    });
+    }
   } catch (err) {
     console.error(err);
     status.textContent = 'Erreur lors de la génération';
