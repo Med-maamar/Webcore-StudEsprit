@@ -71,6 +71,8 @@ class ApplicationSerializer(me_serializers.DocumentSerializer):
     id = serializers.CharField(read_only=True, source="pk")
     user_id = serializers.CharField(read_only=True)
     opportunity = serializers.CharField()
+    # Make status optional at validation time; default to 'submitted'
+    status = serializers.ChoiceField(choices=STATUS_CHOICES, required=False, default="submitted")
     cv_url = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     cover_url = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     cover_text = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -94,6 +96,9 @@ class ApplicationSerializer(me_serializers.DocumentSerializer):
         read_only_fields = ("created_at", "updated_at", "interview", "decision_log")
 
     def validate_status(self, value: str) -> str:
+        # Accept missing/blank and coerce to the expected default
+        if value in (None, ""):
+            return "submitted"
         if value not in STATUS_CHOICES:
             raise serializers.ValidationError("Invalid application status.")
         return value
@@ -112,6 +117,10 @@ class ApplicationSerializer(me_serializers.DocumentSerializer):
             raise serializers.ValidationError({"opportunity": "Opportunity not found."})
         validated_data["opportunity"] = opp
         validated_data["user_id"] = str(request.user.id)
+        # Force initial status to 'submitted' for applications created via the
+        # public apply flow. This avoids client-side inconsistencies (missing or
+        # unexpected values) that were causing validation errors in the modal.
+        validated_data["status"] = "submitted"
         # Prevent duplicate applications for the same user/opportunity
         from .models import Application as AppModel
         if AppModel.objects(user_id=validated_data["user_id"], opportunity=opp).first():

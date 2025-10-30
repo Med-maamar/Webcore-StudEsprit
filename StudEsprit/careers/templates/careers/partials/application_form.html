@@ -9,10 +9,21 @@
     <div class="p-2 rounded bg-red-50 text-red-700 border border-red-200 text-sm">
       Merci de corriger les champs en erreur.
     </div>
+    {% if errors.non_field_errors %}
+      <div class="text-sm text-red-700">{{ errors.non_field_errors|join:', ' }}</div>
+    {% endif %}
+    {% if errors.status %}
+      <div class="text-sm text-red-700">{{ errors.status|join:', ' }}</div>
+    {% endif %}
+    {% if errors.opportunity %}
+      <div class="text-sm text-red-700">{{ errors.opportunity|join:', ' }}</div>
+    {% endif %}
+    {% if errors.user_id %}
+      <div class="text-sm text-red-700">{{ errors.user_id|join:', ' }}</div>
+    {% endif %}
   {% endif %}
 
-  <!-- Statut caché: Soumise par défaut -->
-  <input type="hidden" name="status" value="submitted" />
+  <!-- Le statut est défini côté serveur sur 'submitted' -->
 
   <div>
     <label class="block text-sm font-medium text-gray-600">Mon CV</label>

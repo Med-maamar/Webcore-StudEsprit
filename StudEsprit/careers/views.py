@@ -488,39 +488,44 @@ class OpportunityApplyView(LoginRequiredMixin, View):
         from .permissions import _is_staff
         if _is_staff(request.user):
             raise Http404("Admins cannot apply to opportunities")
-        data = {
-            "opportunity": str(opportunity.id),
-            "status": request.POST.get("status", "submitted"),
-            "cv_url": request.POST.get("cv_url"),
-            "cover_url": request.POST.get("cover_url"),
-            "cover_text": request.POST.get("cover_text"),
-            "notes": request.POST.get("notes"),
-        }
-        serializer = ApplicationSerializer(data=data, context={"request": request})
+
+        # Si une candidature existe déjà pour cet utilisateur et cette opportunité,
+        # afficher directement le succès (idempotent côté UI).
+        existing = Application.objects(user_id=str(request.user.id), opportunity=opportunity).first()
         template = "careers/partials/application_success.html"
-        if serializer.is_valid():
-            try:
-                serializer.save()
-            except Exception as e:
-                # Handle duplicate index race or NotUniqueError gracefully
-                from mongoengine.errors import NotUniqueError
-                from pymongo.errors import DuplicateKeyError
-                if isinstance(e, (NotUniqueError, DuplicateKeyError)):
-                    existing = Application.objects(user_id=str(request.user.id), opportunity=opportunity).first()
-                    if existing:
-                        return render(request, template, {"opportunity": opportunity, "application": existing}, status=200)
-                # Unexpected error: re-raise
-                raise
-            context = {"opportunity": opportunity, "application": serializer.instance}
-            return render(request, template, context, status=201)
-        context = {
-            "opportunity": opportunity,
-            "serializer": serializer,
-            "initial": serializer.initial_data,
-            "errors": serializer.errors,
-        }
-        # Return 200 with inline errors to avoid Bad Request overlay in HTMX
-        return render(request, self.template_name, context)
+        if existing:
+            return render(request, template, {"opportunity": opportunity, "application": existing}, status=200)
+
+        # Création directe pour contourner un problème de validation DRF
+        # (le champ 'opportunity' était interprété comme requis non fourni
+        # par le serializer, malgré l'injection côté vue).
+        try:
+            app = Application(
+                user_id=str(request.user.id),
+                opportunity=opportunity,
+                status="submitted",
+                cv_url=request.POST.get("cv_url") or None,
+                cover_url=request.POST.get("cover_url") or None,
+                cover_text=request.POST.get("cover_text") or "",
+                notes=request.POST.get("notes") or "",
+            )
+            app.save()
+            return render(request, template, {"opportunity": opportunity, "application": app}, status=201)
+        except Exception as e:
+            # Rechute propre sur le formulaire avec un message clair
+            errors = {"non_field_errors": [str(e)]}
+            context = {
+                "opportunity": opportunity,
+                "serializer": ApplicationSerializer(),
+                "initial": {
+                    "cv_url": request.POST.get("cv_url", ""),
+                    "cover_url": request.POST.get("cover_url", ""),
+                    "cover_text": request.POST.get("cover_text", ""),
+                    "notes": request.POST.get("notes", ""),
+                },
+                "errors": errors,
+            }
+            return render(request, self.template_name, context)
 
     @staticmethod
     def _get_opportunity(pk: str) -> Opportunity:

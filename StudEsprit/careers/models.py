@@ -82,7 +82,9 @@ class Opportunity(me.Document):
 class Application(me.Document):
     user_id = me.StringField(required=True)
     opportunity = me.ReferenceField(Opportunity, required=True, reverse_delete_rule=me.CASCADE)
-    status = me.StringField(required=True, default="draft", choices=STATUS_CHOICES)
+    # Default to 'submitted' so any creation path starts in the expected state
+    # for a freshly filed application.
+    status = me.StringField(required=True, default="submitted", choices=STATUS_CHOICES)
     # Accept relative paths or external URLs without strict validation
     cv_url = me.StringField()
     cover_url = me.StringField()
