@@ -12,11 +12,19 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
 DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"}
-# For local development, avoid hardcoding HTTPS origins to prevent HTTPS-only behavior.
-# Uncomment the production origin below when deploying.
-# CSRF_TRUSTED_ORIGINS = ['https://webcore-studesprit.onrender.com']
-CSRF_TRUSTED_ORIGINS = [] if DEBUG else ['https://webcore-studesprit.onrender.com']
-ALLOWED_HOSTS = ['webcore-studesprit.onrender.com', 'localhost', '127.0.0.1']
+# CSRF trusted origins may be provided via env var `CSRF_TRUSTED_ORIGINS` (comma-separated).
+# If not provided, include the common deployment origin so POST requests from that origin
+# (for example when the app is accessed through Render) are accepted. Be careful in
+# production to restrict this to legitimate domains.
+env_trusted = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+if env_trusted:
+    CSRF_TRUSTED_ORIGINS = [o.strip() for o in env_trusted.split(",") if o.strip()]
+else:
+    # include the deployed origin by default alongside localhost entries
+    CSRF_TRUSTED_ORIGINS = ["https://webcore-studesprit.onrender.com"]
+
+# Hosts allowed to serve the Django app
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "webcore-studesprit.onrender.com,localhost,127.0.0.1").split(",")
 
 APP_VERSION = "0.1.0"
 
