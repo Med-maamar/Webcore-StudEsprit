@@ -91,7 +91,7 @@
             </div>
           </div>
           {% endif %}
-          <a href="/events/" class="hover:text-esprit-red">Actualités</a>
+<a href="{% url 'evenement:public_event_list' %}" class="hover:text-esprit-red">Actualités</a>
           {% if current_user and current_user.is_authenticated and current_user.role == 'Admin' %}
             <a href="/admin/library/documents/" class="hover:text-esprit-red">Bibliothèque (Admin)</a>
           {% else %}

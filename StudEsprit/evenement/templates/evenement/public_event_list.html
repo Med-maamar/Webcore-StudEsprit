@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1 style="font-size:1.8rem; margin-bottom:1rem; text-align:center;">Événements publics</h1>
+
+<!-- 🔍 Champ de recherche -->
+<div style="text-align:center; margin-bottom:2rem;">
+  <input 
+    type="text" 
+    id="searchInput" 
+    placeholder="Rechercher un événement..." 
+    style="width:60%; padding:10px; border:1px solid #ccc; border-radius:8px;"
+  >
+</div>
+
+{% if upcoming_event %}
+<div style="background:#e8f5e9; border-left:4px solid #28a745; padding:15px; margin:20px auto; max-width:800px; border-radius:8px;">
+  <h3 style="margin:0; color:#2e7d32;">Prochain événement</h3>
+  <p style="margin:8px 0 0 0;">
+    <strong>{{ upcoming_event.title }}</strong><br>
+    {{ upcoming_event.location }}<br>
+    {{ upcoming_event.description|truncatewords:20 }}<br>
+    {{ upcoming_event.start_datetime|date:"d/m/Y H:i" }}
+  </p>
+</div>
+{% endif %}
+
+<!-- 🔁 Conteneur où seront chargés les événements -->
+<div id="eventContainer" style="display:grid; gap:1.5rem; max-width:900px; margin:auto;">
+  {% for event in events %}
+  <div style="background:#fff; padding:1.2rem; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.08);">
+    <h2 style="margin:0 0 .4rem; font-size:1.3rem; color:#d6232a;">{{ event.title }}</h2>
+    <p style="margin:0 0 .4rem; color:#555;">
+      <strong>Date :</strong> {{ event.start_datetime|date:"d/m/Y à H:i" }}
+      {% if event.end_datetime %} – {{ event.end_datetime|date:"H:i" }}{% endif %}
+    </p>
+    <p style="margin:0 0 .8rem; color:#555;">
+      <strong>Description :</strong> {{ event.description|truncatewords:20 }}
+    </p>
+    <p style="margin:0 0 .8rem; color:#555;">
+      <strong>Lieu :</strong> {{ event.location }}
+    </p>
+  </div>
+  {% empty %}
+  <p style="text-align:center; color:#777;">Aucun événement public pour le moment.</p>
+  {% endfor %}
+</div>
+
+<!-- 🧠 Script AJAX -->
+<script>
+document.getElementById('searchInput').addEventListener('keyup', function() {
+  const query = this.value;
+  fetch(`/events/search/?q=${query}`)
+    .then(response => response.text())
+    .then(html => {
+      document.getElementById('eventContainer').innerHTML = html;
+    });
+});
+</script>
+
+{% endblock %}

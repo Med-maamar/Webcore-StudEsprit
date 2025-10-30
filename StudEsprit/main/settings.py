@@ -2,13 +2,12 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import logging.config
-from mongoengine import connect
 
 
-# Load environment variables from project .env explicitly
+# Load environment variables from .env if present
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
-
 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me-in-production")
 DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"}
@@ -38,24 +37,18 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "rest_framework",
-    "rest_framework_mongoengine",
-    "django_htmx",
     # Local apps
     "core",
     "accounts",
-    "program",
     "dashboard",
     "ai",
     "library",
-    "evenement",
-    "careers",
+  "evenement",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "django_htmx.middleware.HtmxMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -143,17 +136,9 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
-# MongoDB env / mongoengine connection
-MONGODB_URI = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI")
-MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME") or os.getenv("MONGO_DB_NAME") or "studhub"
-if not MONGODB_URI:
-    MONGODB_URI = f"mongodb://localhost:27017/{MONGODB_DB_NAME}"
-
-connect(alias="default", host=MONGODB_URI, db=MONGODB_DB_NAME)
-
-# Backwards compatibility for modules using legacy names
-MONGO_URI = MONGODB_URI
-MONGO_DB_NAME = MONGODB_DB_NAME
+# MongoDB env
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "studesprit")
 
 # Google OAuth2
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
@@ -162,10 +147,6 @@ GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "")
 
 # OpenAI API
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-
-# Gemini API
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "")
 
 # Configure logging without Django's DEFAULT_LOGGING (avoids mail_admins)
 LOGGING_CONFIG = None
@@ -178,20 +159,3 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
 }
 logging.config.dictConfig(LOGGING)
-
-
-# REST framework defaults
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
-        "rest_framework.authentication.BasicAuthentication",
-    ],
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
-    ],
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 20,
-}
-
-LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/"

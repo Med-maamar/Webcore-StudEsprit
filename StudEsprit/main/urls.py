@@ -1,3 +1,4 @@
+# main/urls.py
 from django.urls import include, path
 from django.contrib import admin
 from django.conf import settings
@@ -15,7 +16,6 @@ from careers.views import (
 )
 from accounts.urls import account_urlpatterns
 
-
 urlpatterns = [
     # Custom admin (careers) must come BEFORE Django admin catch-all
     path("admin/careers/applications/", AdminApplicationsListView.as_view(), name="careers-admin-applications"),
@@ -27,22 +27,22 @@ urlpatterns = [
 
     path("admin/", admin.site.urls),
     path("", home, name="home"),
-    path("auth/", include("accounts.urls")),
+    path("auth/", include("accounts.urls")),  # Login: /auth/login/
     path("account/", include((account_urlpatterns, "accounts"), namespace="account")),
     path("dashboard/", include("dashboard.urls")),
     path("library/", include("library.urls")),
     path("", include("careers.urls")),
-    # Careers entrypoint under historic Services URL
     path("services/", RedirectView.as_view(pattern_name="careers:opportunity-list", permanent=False), name="services"),
-    # Other stubs (coming soon pages)
     path("courses/", coming_soon, name="courses"),
-    path("events/", include("evenement.urls")),
+    
+    # ONLY ONE events/ — NO DUPLICATES
+path("evenement/", include("evenement.urls")),
+path("events/", include("evenement.urls")),
+
     path("shop/", coming_soon, name="shop"),
-        # Program app (niveaux management)
     path("program/", include("program.urls")),
 ]
 
-# Serve static assets explicitly in DEBUG (helps when runserver static handler is bypassed)
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.BASE_DIR / "static")
     urlpatterns += staticfiles_urlpatterns()

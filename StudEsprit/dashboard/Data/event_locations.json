@@ -1,0 +1,87 @@
+[
+  {
+    "type_evenement": "Formation éducative",
+    "adresses": [
+      {
+        "nom": "Hôtel Tunis El Mechtel",
+        "adresse": "Avenue Tahar Ben Achour, Tunis 1002",
+        "capacite": 200,
+        "description": "Hôtel 4 étoiles avec salles de conférence équipées pour formations."
+      },
+      {
+        "nom": "Amphi A - ESPRIT",
+        "adresse": "Campus Universitaire, Route de Kairouan, Monastir 5000",
+        "capacite": 150,
+        "description": "Amphithéâtre universitaire moderne avec projecteur et sonorisation."
+      }
+    ]
+  },
+  {
+    "type_evenement": "Hackathon",
+    "adresses": [
+      {
+        "nom": "Tech Hub Monastir",
+        "adresse": "Zone Industrielle, Monastir 5000",
+        "capacite": 100,
+        "description": "Espace dédié au coding avec WiFi haut débit et prises multiples."
+      },
+      {
+        "nom": "Hôtel Royal Thalassa",
+        "adresse": "Yasmine Hammamet, Hammamet 8050",
+        "capacite": 300,
+        "description": "Hôtel avec salles pour hackathons, WiFi illimité et catering."
+      }
+    ]
+  },
+  {
+    "type_evenement": "Conférence",
+    "adresses": [
+      {
+        "nom": "Palais des Congrès de Tunis",
+        "adresse": "Avenue Mohamed V, Tunis 1002",
+        "capacite": 500,
+        "description": "Centre professionnel pour grandes conférences avec traduction simultanée."
+      },
+      {
+        "nom": "Amphi B - ESPRIT",
+        "adresse": "Campus Universitaire, Monastir 5000",
+        "capacite": 200,
+        "description": "Salle académique pour conférences thématiques."
+      }
+    ]
+  },
+  {
+    "type_evenement": "Workshop",
+    "adresses": [
+      {
+        "nom": "Co-working Space Ariana",
+        "adresse": "Résidence Ariana, Ariana 2080",
+        "capacite": 50,
+        "description": "Espace collaboratif idéal pour ateliers pratiques et workshops."
+      },
+      {
+        "nom": "Salle de Formation C - ESPRIT",
+        "adresse": "Campus, Monastir 5000",
+        "capacite": 80,
+        "description": "Salle équipée pour workshops interactifs avec tableaux blancs."
+      }
+    ]
+  },
+  {
+    "type_evenement": "Forum",
+    "adresses": [
+      {
+        "nom": "Hôtel La Badira",
+        "adresse": "Yasmine Hammamet, Hammamet 8050",
+        "capacite": 250,
+        "description": "Hôtel avec espaces networking et salles pour forums."
+      },
+      {
+        "nom": "Auditorium ESPRIT",
+        "adresse": "Campus Universitaire, Monastir 5000",
+        "capacite": 400,
+        "description": "Auditorium spacieux pour forums, débats et réseautage."
+      }
+    ]
+  }
+]
