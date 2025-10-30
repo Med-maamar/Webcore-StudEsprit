@@ -16,10 +16,20 @@ DEBUG = os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"}
 # Uncomment the production origin below when deploying.
 # CSRF_TRUSTED_ORIGINS = ['https://webcore-studesprit.onrender.com']
 CSRF_TRUSTED_ORIGINS = [] if DEBUG else ['https://webcore-studesprit.onrender.com']
+
+
+# ALLOWED_HOSTS
 ALLOWED_HOSTS = ['webcore-studesprit.onrender.com', 'localhost', '127.0.0.1']
 
-APP_VERSION = "0.1.0"
+# CSRF SETTINGS
+CSRF_TRUSTED_ORIGINS = [
+    'https://webcore-studesprit.onrender.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
 
+# ALLOW AJAX POSTS WITHOUT CSRF (for API calls)
+CSRF_EXEMPT_API = True  # Optional flag
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
