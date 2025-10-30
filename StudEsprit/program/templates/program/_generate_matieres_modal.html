@@ -42,13 +42,9 @@
 </div>
 
 <script>
-<<<<<<< HEAD
 // Default to the same-origin Django proxy so the generator runs under
-// http://127.0.0.1:8000 when Django is serving the app. Override via
+// the app's origin (e.g. http://127.0.0.1:8000). Override via
 // window.GENERATOR_URL if you need to point to an external generator.
-=======
-// Requires: the Flask generator running at http://localhost:5002 by default
->>>>>>> bd93feacce21fc3136aa30f2f42a86b7a4419aba
 const GENERATOR_URL = window.GENERATOR_URL || '/program/api/generate_matieres/';
 
 function openGenerateModal() {
